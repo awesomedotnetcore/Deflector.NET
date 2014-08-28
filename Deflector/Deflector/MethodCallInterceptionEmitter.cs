@@ -80,71 +80,75 @@ namespace Deflector
             body.Instructions.Clear();
 
             var callInstructions = oldInstructions.Where(instruction => instruction.OpCode == OpCodes.Call ||
-                                                                        instruction.OpCode == OpCodes.Callvirt);
+                                                                        instruction.OpCode == OpCodes.Callvirt).ToArray();
 
-            var il = body.GetILProcessor();
-            var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference);
-
-            // Precalculate all method call interceptors            
-            var addMethod = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("Add", typeof(MethodBase),
-                typeof(IMethodCall));
-
-            var provider = method.AddLocal<IMethodCallProvider>();
-            var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));
-
-            // Create the stack that will hold the method arguments
-            il.Emit(OpCodes.Newobj, _stackCtor);
-            il.Emit(OpCodes.Stloc, _currentArguments);
-
-            // Obtain the method call provider instance
-            il.Emit(method.HasThis ? OpCodes.Ldarg_0 : OpCodes.Ldnull);
-            il.PushType(method.DeclaringType, module);
-            il.PushStackTrace(module);
-            il.Emit(OpCodes.Call, getProvider);
-
-            il.Emit(OpCodes.Stloc, provider);
-
-            // Instantiate the map
-            var mapCtor = module.ImportConstructor<ConcurrentDictionary<MethodBase, IMethodCall>>(new Type[0]);
-            il.Emit(OpCodes.Newobj, mapCtor);
-            il.Emit(OpCodes.Stloc, _callMap);
-
-            var getMethodCallFor = module.ImportMethod<IMethodCallProvider>("GetMethodCallFor");
-
-            var skipCallMapConstruction = il.Create(OpCodes.Nop);
-
-            il.Emit(OpCodes.Ldloc, provider);
-            il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
-
-            // if (provider != null) {
-            foreach (var targetMethod in targetMethods)
+            // Skip the method if there are no calls to intercept
+            if (callInstructions.Any())
             {
-                // callMap.Add(targetMethod, provider.GetMethodCallFor(targetMethod))
-                il.Emit(OpCodes.Ldloc, _callMap);
-                il.PushMethod(targetMethod, module);
+                var il = body.GetILProcessor();
+                var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference);
+
+                // Precalculate all method call interceptors            
+                var addMethod = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("Add", typeof (MethodBase),
+                    typeof (IMethodCall));
+
+                var provider = method.AddLocal<IMethodCallProvider>();
+                var getProvider = module.ImportMethod("GetProvider", typeof (MethodCallProviderRegistry));
+
+                // Create the stack that will hold the method arguments
+                il.Emit(OpCodes.Newobj, _stackCtor);
+                il.Emit(OpCodes.Stloc, _currentArguments);
+
+                // Obtain the method call provider instance
+                il.Emit(method.HasThis ? OpCodes.Ldarg_0 : OpCodes.Ldnull);
+                il.PushType(method.DeclaringType, module);
+                il.PushStackTrace(module);
+                il.Emit(OpCodes.Call, getProvider);
+
+                il.Emit(OpCodes.Stloc, provider);
+
+                // Instantiate the map
+                var mapCtor = module.ImportConstructor<ConcurrentDictionary<MethodBase, IMethodCall>>(new Type[0]);
+                il.Emit(OpCodes.Newobj, mapCtor);
+                il.Emit(OpCodes.Stloc, _callMap);
+
+                var getMethodCallFor = module.ImportMethod<IMethodCallProvider>("GetMethodCallFor");
+
+                var skipCallMapConstruction = il.Create(OpCodes.Nop);
 
                 il.Emit(OpCodes.Ldloc, provider);
-                il.PushMethod(targetMethod, module);
-                il.PushStackTrace(module);
-                il.Emit(OpCodes.Callvirt, getMethodCallFor);
+                il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
 
-                il.Emit(OpCodes.Callvirt, addMethod);
-            }
-
-            // }
-
-            il.Append(skipCallMapConstruction);
-
-            foreach (var instruction in oldInstructions)
-            {
-                var opCode = instruction.OpCode;
-                if (opCode != OpCodes.Call && opCode != OpCodes.Callvirt)
+                // if (provider != null) {
+                foreach (var targetMethod in targetMethods)
                 {
-                    il.Append(instruction);
-                    continue;
+                    // callMap.Add(targetMethod, provider.GetMethodCallFor(targetMethod))
+                    il.Emit(OpCodes.Ldloc, _callMap);
+                    il.PushMethod(targetMethod, module);
+
+                    il.Emit(OpCodes.Ldloc, provider);
+                    il.PushMethod(targetMethod, module);
+                    il.PushStackTrace(module);
+                    il.Emit(OpCodes.Callvirt, getMethodCallFor);
+
+                    il.Emit(OpCodes.Callvirt, addMethod);
                 }
 
-                ReplaceMethodCallInstruction(instruction, method, il);
+                // }
+
+                il.Append(skipCallMapConstruction);
+
+                foreach (var instruction in oldInstructions)
+                {
+                    var opCode = instruction.OpCode;
+                    if (opCode != OpCodes.Call && opCode != OpCodes.Callvirt)
+                    {
+                        il.Append(instruction);
+                        continue;
+                    }
+
+                    ReplaceMethodCallInstruction(instruction, method, il);
+                }
             }
 
             // Add the attribute marker so that this method is only modified once
