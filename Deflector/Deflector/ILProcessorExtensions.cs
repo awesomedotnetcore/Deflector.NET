@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -7,6 +8,23 @@ namespace Deflector
 {
     public static class ILProcessorExtensions
     {
+        /// <summary>
+        /// Pushes the stack trace of the currently executing method onto the stack.
+        /// </summary>
+        /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
+        /// <param name="module">The module that contains the host method.</param>
+        public static void PushStackTrace(this ILProcessor IL, ModuleDefinition module)
+        {
+            var stackTraceConstructor =
+                typeof(StackTrace).GetConstructor(new[] { typeof(int), typeof(bool) });
+            var stackTraceCtor = module.Import(stackTraceConstructor);
+
+            var addDebugSymbols = OpCodes.Ldc_I4_1;
+            IL.Emit(OpCodes.Ldc_I4_1);
+            IL.Emit(addDebugSymbols);
+            IL.Emit(OpCodes.Newobj, stackTraceCtor);
+        }
+
         /// <summary>
         /// Emits a Console.WriteLine call to using the current ILProcessor that will only be called if the contents
         /// of the target variable are null at runtime.

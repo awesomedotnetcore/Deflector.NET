@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
@@ -38,6 +39,7 @@ namespace Deflector
             {
                 typeof (object),
                 typeof (MethodBase),
+                typeof(StackTrace),
                 typeof (Type[]),
                 typeof (Type[]),
                 typeof (Type),
@@ -88,7 +90,9 @@ namespace Deflector
             // Obtain the method call provider instance
             il.Emit(method.HasThis ? OpCodes.Ldarg_0 : OpCodes.Ldnull);
             il.PushType(method.DeclaringType, module);
+            il.PushStackTrace(module);
             il.Emit(OpCodes.Call, getProvider);
+
             il.Emit(OpCodes.Stloc, provider);
 
             // Instantiate the map
@@ -112,6 +116,7 @@ namespace Deflector
 
                 il.Emit(OpCodes.Ldloc, provider);
                 il.PushMethod(targetMethod, module);
+                il.PushStackTrace(module);
                 il.Emit(OpCodes.Callvirt, getMethodCallFor);
 
                 il.Emit(OpCodes.Callvirt, addMethod);
@@ -235,7 +240,7 @@ namespace Deflector
 
             // Push the current method
             il.PushMethod(targetMethod, module);
-
+            il.PushStackTrace(module);
 
             var systemType = module.Import(typeof(Type));
 

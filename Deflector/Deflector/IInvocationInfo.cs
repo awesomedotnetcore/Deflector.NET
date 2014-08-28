@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace Deflector
@@ -21,9 +22,20 @@ namespace Deflector
         MethodBase TargetMethod { get; }
 
         /// <summary>
+        /// This is the actual calling method that invoked the <see cref="TargetMethod"/>.
+        /// </summary>
+        MethodBase CallingMethod { get; }
+
+        /// <summary>
         /// The return type of the <see cref="TargetMethod"/>.
         /// </summary>
         Type ReturnType { get; }
+
+        /// <summary>
+        /// The <see cref="StackTrace"/> associated
+        /// with the method call when the call was made.
+        /// </summary>
+        StackTrace StackTrace { get; }
 
         /// <summary>
         /// The parameter types for the current target method.

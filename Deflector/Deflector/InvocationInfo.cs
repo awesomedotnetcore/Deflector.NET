@@ -26,6 +26,7 @@ namespace Deflector
         /// </summary>
         /// <param name="target">The target instance currently being called.</param>
         /// <param name="targetMethod">The method currently being called.</param>
+        /// <param name="stackTrace"> The <see cref="StackTrace"/> associated with the method call when the call was made.</param>
         /// <param name="parameterTypes">The parameter types for the current target method.</param>
         /// <param name="typeArguments">
         /// If the <see cref="TargetMethod"/> method is a generic method, 
@@ -34,11 +35,13 @@ namespace Deflector
         /// </param>
         /// <param name="returnType">The return type of the target method.</param>
         /// <param name="arguments">The arguments used in the method call.</param>
-        public InvocationInfo(object target, MethodBase targetMethod, Type[] parameterTypes,
+        public InvocationInfo(object target, MethodBase targetMethod,
+            StackTrace stackTrace, Type[] parameterTypes,
             Type[] typeArguments, Type returnType, object[] arguments)
         {
             _target = target;
             _targetMethod = targetMethod;
+            _stackTrace = stackTrace;
             _parameterTypes = parameterTypes;
             _typeArguments = typeArguments;
             _arguments = arguments;

@@ -1,17 +1,16 @@
 using System;
+using System.Diagnostics;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace Deflector
 {
-    /// <summary>
-    /// Represents a class that emits the method call information and pushes it onto the stack.
-    /// </summary>
-    public class InvocationInfoEmitter 
+    public class InvocationInfoEmitter
     {
         private static readonly ConstructorInfo InvocationInfoConstructor;
         private static readonly MethodInfo GetTypeFromHandle;
+        private readonly bool _pushStackTrace;
 
         static InvocationInfoEmitter()
         {
@@ -19,6 +18,7 @@ namespace Deflector
             {
                 typeof (object),
                 typeof (MethodBase),
+                typeof (StackTrace),
                 typeof (Type[]),
                 typeof (Type[]),
                 typeof (Type),
@@ -32,6 +32,24 @@ namespace Deflector
         }
 
         /// <summary>
+        /// Initializes a new instance of the InvocationInfoEmitter class.
+        /// </summary>
+        public InvocationInfoEmitter()
+            : this(true)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the InvocationInfoEmitter class.
+        /// </summary>
+        /// <param name="pushStackTrace">Determines whether or not stack trace information will be available at runtime.</param>
+        public InvocationInfoEmitter(bool pushStackTrace)
+        {
+            _pushStackTrace = pushStackTrace;
+        }
+
+
+        /// <summary>
         /// Emits the IL to save information about
         /// the method currently being executed.
         /// </summary>
@@ -43,10 +61,10 @@ namespace Deflector
             VariableDefinition invocationInfo)
         {
             var module = targetMethod.DeclaringType.Module;
-            var currentMethod = targetMethod.AddLocal(typeof(MethodBase));
-            var parameterTypes = targetMethod.AddLocal(typeof(Type[]));
-            var arguments = targetMethod.AddLocal(typeof(object[]));
-            var typeArguments = targetMethod.AddLocal(typeof(Type[]));
+            var currentMethod = MethodDefinitionExtensions.AddLocal(targetMethod, typeof(MethodBase));
+            var parameterTypes = MethodDefinitionExtensions.AddLocal(targetMethod, typeof(Type[]));
+            var arguments = MethodDefinitionExtensions.AddLocal(targetMethod, typeof(object[]));
+            var typeArguments = MethodDefinitionExtensions.AddLocal(targetMethod, typeof(Type[]));
             var systemType = module.ImportType(typeof(Type));
 
             var IL = targetMethod.GetILGenerator();
@@ -62,7 +80,10 @@ namespace Deflector
             IL.PushArguments(targetMethod, module, arguments);
 
             // object target = this;
-            IL.Emit(targetMethod.HasThis ? OpCodes.Ldarg_0 : OpCodes.Ldnull);
+            if (targetMethod.HasThis)
+                IL.Emit(OpCodes.Ldarg_0);
+            else
+                IL.Emit(OpCodes.Ldnull);
 
             IL.PushMethod(interceptedMethod, module);
 
@@ -98,6 +119,10 @@ namespace Deflector
                 IL.Append(skipMakeGenericMethod);
             }
 
+            if (_pushStackTrace)
+                IL.PushStackTrace(module);
+            else
+                IL.Emit(OpCodes.Ldnull);
 
             // Save the parameter types
             IL.Emit(OpCodes.Ldc_I4, targetMethod.Parameters.Count);
@@ -119,7 +144,6 @@ namespace Deflector
 
             // Push the arguments back onto the stack
             IL.Emit(OpCodes.Ldloc, arguments);
-
 
             // InvocationInfo info = new InvocationInfo(...);
             var infoConstructor = module.Import(InvocationInfoConstructor);
