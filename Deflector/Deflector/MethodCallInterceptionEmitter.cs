@@ -225,8 +225,6 @@ namespace Deflector
                 if (parameterType.IsValueType || parameterType is GenericParameter)
                     il.Emit(OpCodes.Box, parameterType);
 
-
-                il.EmitWriteLineIfNull("Current Arguments is null!", _currentArguments);
                 il.Emit(OpCodes.Stloc, _currentArgument);
                 il.Emit(OpCodes.Ldloc, _currentArguments);
                 il.Emit(OpCodes.Ldloc, _currentArgument);
