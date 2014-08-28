@@ -63,6 +63,7 @@
     <Compile Include="MethodBodyRewriterExtensions.cs" />
     <Compile Include="MethodCallInterceptionEmitter.cs" />
     <Compile Include="MethodCallProviderRegistry.cs" />
+    <Compile Include="MethodCallsAlreadyInterceptedAttribute.cs" />
     <Compile Include="MethodDefinitionExtensions.cs" />
     <Compile Include="ModuleDefinitionExtensions.cs" />
     <Compile Include="ParameterDefinitionExtensions.cs" />

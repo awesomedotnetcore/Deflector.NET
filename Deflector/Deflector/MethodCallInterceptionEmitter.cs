@@ -26,6 +26,8 @@ namespace Deflector
         private MethodReference _getMethodCall;
         private MethodReference _invokeMethod;
         private MethodReference _stackCtor;
+        private MethodReference _markerAttributeCtor;
+        private TypeReference _markerAttributeType;
 
         public void ImportReferences(ModuleDefinition module)
         {
@@ -34,6 +36,8 @@ namespace Deflector
             _getMethodCall = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("get_Item");
             _invokeMethod = module.ImportMethod<IMethodCall>("Invoke");
             _stackCtor = module.ImportConstructor<Stack<object>>(new Type[0]);
+            _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>(new Type[0]);
+            _markerAttributeType = module.ImportType<MethodCallsAlreadyInterceptedAttribute>();
 
             var types = new[]
             {
@@ -64,6 +68,11 @@ namespace Deflector
 
         public void Rewrite(MethodDefinition method, ModuleDefinition module)
         {
+            // Ignore methods that have already been modified
+            var customAttributes = method.CustomAttributes;
+            if (customAttributes.Any(c => c.AttributeType == _markerAttributeType))
+                return;
+
             var body = method.Body;
             body.InitLocals = true;
 
@@ -137,6 +146,9 @@ namespace Deflector
 
                 ReplaceMethodCallInstruction(instruction, method, il);
             }
+
+            // Add the attribute marker so that this method is only modified once
+            customAttributes.Add(new CustomAttribute(_markerAttributeCtor));
         }
 
         private void ReplaceMethodCallInstruction(Instruction oldInstruction, MethodDefinition hostMethod,
