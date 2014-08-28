@@ -13,14 +13,15 @@ namespace Deflector
         /// </summary>
         /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
         /// <param name="module">The module that contains the host method.</param>
-        public static void PushStackTrace(this ILProcessor IL, ModuleDefinition module)
+        /// <param name="framesToSkip">The number of stack frames to skip.</param>
+        public static void PushStackTrace(this ILProcessor IL, ModuleDefinition module, int framesToSkip = 0)
         {
             var stackTraceConstructor =
                 typeof(StackTrace).GetConstructor(new[] { typeof(int), typeof(bool) });
             var stackTraceCtor = module.Import(stackTraceConstructor);
 
             var addDebugSymbols = OpCodes.Ldc_I4_1;
-            IL.Emit(OpCodes.Ldc_I4_1);
+            IL.Emit(OpCodes.Ldc_I4, framesToSkip);
             IL.Emit(addDebugSymbols);
             IL.Emit(OpCodes.Newobj, stackTraceCtor);
         }

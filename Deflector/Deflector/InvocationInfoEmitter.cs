@@ -120,7 +120,7 @@ namespace Deflector
             }
 
             if (_pushStackTrace)
-                IL.PushStackTrace(module);
+                IL.PushStackTrace(module, 1);
             else
                 IL.Emit(OpCodes.Ldnull);
 
