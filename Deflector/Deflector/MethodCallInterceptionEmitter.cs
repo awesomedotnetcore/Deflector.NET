@@ -180,6 +180,10 @@ namespace Deflector
             var targetMethod = (MethodReference)oldInstruction.Operand;
             var module = hostMethod.Module;
 
+            // Value type constructor calls are not supported
+            if (targetMethod.Name == ".ctor" || targetMethod.Name == ".cctor" && opCode == OpCodes.Call)
+                return;
+
             // Grab the method call instance
             il.Emit(OpCodes.Ldloc, _callMap);
 
