@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -5,6 +7,6 @@ namespace Deflector
 {
     public interface IMethodCallProvider
     {
-        IMethodCall GetMethodCallFor(MethodBase method, StackTrace stackTrace);
+        void AddMethodCalls(IEnumerable<MethodBase> interceptedMethods, IDictionary<MethodBase, IMethodCall> methodCallMap, StackTrace stackTrace);
     }
 }

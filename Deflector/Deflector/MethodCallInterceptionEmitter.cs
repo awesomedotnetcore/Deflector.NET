@@ -19,6 +19,7 @@ namespace Deflector
         private VariableDefinition _typeArguments;
         private VariableDefinition _callMap;
         private VariableDefinition _currentMethodCall;
+        private VariableDefinition _interceptedMethods;
 
         private MethodReference _pushMethod;
         private MethodReference _toArray;
@@ -27,6 +28,8 @@ namespace Deflector
         private MethodReference _invokeMethod;
         private MethodReference _stackCtor;
         private MethodReference _markerAttributeCtor;
+        private MethodReference _addMethodCalls;
+
         private TypeReference _markerAttributeType;
 
         public void ImportReferences(ModuleDefinition module)
@@ -36,8 +39,9 @@ namespace Deflector
             _getMethodCall = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("get_Item");
             _invokeMethod = module.ImportMethod<IMethodCall>("Invoke");
             _stackCtor = module.ImportConstructor<Stack<object>>(new Type[0]);
-            _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>(new Type[0]);
+            _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>(new Type[0]);        
             _markerAttributeType = module.ImportType<MethodCallsAlreadyInterceptedAttribute>();
+            _addMethodCalls = module.ImportMethod<IMethodCallProvider>("AddMethodCalls");
 
             var types = new[]
             {
@@ -63,6 +67,8 @@ namespace Deflector
             _target = hostMethod.AddLocal<object>("__target");
             _parameterTypes = hostMethod.AddLocal<Type[]>("__parameterTypes");
             _typeArguments = hostMethod.AddLocal<Type[]>("__typeArguments");
+            _interceptedMethods = hostMethod.AddLocal<MethodBase[]>("___interceptedMethods");
+
             _callMap = hostMethod.AddLocal<IDictionary<MethodBase, IMethodCall>>();
         }
 
@@ -86,7 +92,7 @@ namespace Deflector
             if (callInstructions.Any())
             {
                 var il = body.GetILProcessor();
-                var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference);
+                var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference).ToArray();
 
                 // Precalculate all method call interceptors            
                 var addMethod = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("Add", typeof (MethodBase),
@@ -112,29 +118,35 @@ namespace Deflector
                 il.Emit(OpCodes.Newobj, mapCtor);
                 il.Emit(OpCodes.Stloc, _callMap);
 
-                var getMethodCallFor = module.ImportMethod<IMethodCallProvider>("GetMethodCallFor");
-
                 var skipCallMapConstruction = il.Create(OpCodes.Nop);
 
                 il.Emit(OpCodes.Ldloc, provider);
-                il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
+                il.Emit(OpCodes.Brfalse, skipCallMapConstruction);                
 
                 // if (provider != null) {
-                foreach (var targetMethod in targetMethods)
+
+                // Store the list of intercepted methods
+                var targetMethodCount = targetMethods.Length;
+                il.Emit(OpCodes.Ldc_I4, targetMethodCount);
+                il.Emit(OpCodes.Newarr, module.ImportType<MethodBase>());
+                il.Emit(OpCodes.Stloc, _interceptedMethods);
+
+                // Populate the array of intercepted methods
+                for (var i = 0; i < targetMethodCount; i++)
                 {
-                    // callMap.Add(targetMethod, provider.GetMethodCallFor(targetMethod))
-                    il.Emit(OpCodes.Ldloc, _callMap);
-                    il.PushMethod(targetMethod, module);
-
-                    il.Emit(OpCodes.Ldloc, provider);
-                    il.PushMethod(targetMethod, module);
-                    il.PushStackTrace(module);
-                    il.Emit(OpCodes.Callvirt, getMethodCallFor);
-
-                    il.Emit(OpCodes.Callvirt, addMethod);
+                    var currentMethod = targetMethods[i];
+                    il.Emit(OpCodes.Ldloc, _interceptedMethods);
+                    il.Emit(OpCodes.Ldc_I4, i);
+                    il.PushMethod(currentMethod, module);
+                    il.Emit(OpCodes.Stelem_Ref);
                 }
 
-                // }
+                // Build the list of intercepted methods
+                il.Emit(OpCodes.Ldloc, provider);
+                il.Emit(OpCodes.Ldloc, _interceptedMethods);
+                il.Emit(OpCodes.Ldloc, _callMap);
+                il.PushStackTrace(module);
+                il.Emit(OpCodes.Callvirt, _addMethodCalls);                
 
                 il.Append(skipCallMapConstruction);
 
