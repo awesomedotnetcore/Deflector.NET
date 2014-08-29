@@ -39,7 +39,7 @@ namespace Deflector
             _getMethodCall = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("get_Item");
             _invokeMethod = module.ImportMethod<IMethodCall>("Invoke");
             _stackCtor = module.ImportConstructor<Stack<object>>(new Type[0]);
-            _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>(new Type[0]);        
+            _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>(new Type[0]);
             _markerAttributeType = module.ImportType<MethodCallsAlreadyInterceptedAttribute>();
             _addMethodCalls = module.ImportMethod<IMethodCallProvider>("AddMethodCalls");
 
@@ -88,18 +88,20 @@ namespace Deflector
             var callInstructions = oldInstructions.Where(instruction => instruction.OpCode == OpCodes.Call ||
                                                                         instruction.OpCode == OpCodes.Callvirt).ToArray();
 
+            var constructorCalls = oldInstructions.Where(instruction => instruction.OpCode == OpCodes.Newobj).ToArray();
+
             // Skip the method if there are no calls to intercept
-            if (callInstructions.Any())
+            if (callInstructions.Any() || constructorCalls.Any())
             {
                 var il = body.GetILProcessor();
                 var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference).ToArray();
 
                 // Precalculate all method call interceptors            
-                var addMethod = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("Add", typeof (MethodBase),
-                    typeof (IMethodCall));
+                var addMethod = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("Add", typeof(MethodBase),
+                    typeof(IMethodCall));
 
                 var provider = method.AddLocal<IMethodCallProvider>();
-                var getProvider = module.ImportMethod("GetProvider", typeof (MethodCallProviderRegistry));
+                var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));
 
                 // Create the stack that will hold the method arguments
                 il.Emit(OpCodes.Newobj, _stackCtor);
@@ -121,7 +123,7 @@ namespace Deflector
                 var skipCallMapConstruction = il.Create(OpCodes.Nop);
 
                 il.Emit(OpCodes.Ldloc, provider);
-                il.Emit(OpCodes.Brfalse, skipCallMapConstruction);                
+                il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
 
                 // if (provider != null) {
 
@@ -146,7 +148,7 @@ namespace Deflector
                 il.Emit(OpCodes.Ldloc, _interceptedMethods);
                 il.Emit(OpCodes.Ldloc, _callMap);
                 il.PushStackTrace(module);
-                il.Emit(OpCodes.Callvirt, _addMethodCalls);                
+                il.Emit(OpCodes.Callvirt, _addMethodCalls);
 
                 il.Append(skipCallMapConstruction);
 
@@ -159,12 +161,22 @@ namespace Deflector
                         continue;
                     }
 
-                    ReplaceMethodCallInstruction(instruction, method, il);
+                    if (opCode == OpCodes.Call || opCode == OpCodes.Callvirt)
+                        ReplaceMethodCallInstruction(instruction, method, il);
+
+                    if(opCode == OpCodes.Newobj)
+                        ReplaceConstructorCall(instruction, method, il);
                 }
             }
 
             // Add the attribute marker so that this method is only modified once
             customAttributes.Add(new CustomAttribute(_markerAttributeCtor));
+        }
+
+        private void ReplaceConstructorCall(Instruction oldInstruction, MethodDefinition hostMethod,
+            ILProcessor il)
+        {
+            il.Append(oldInstruction);
         }
 
         private void ReplaceMethodCallInstruction(Instruction oldInstruction, MethodDefinition hostMethod,
