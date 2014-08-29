@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyDefinitionExtensions.cs" />
+    <Compile Include="CompositeMethodCallProvider.cs" />
     <Compile Include="IInvocationInfo.cs" />
     <Compile Include="ILProcessorExtensions.cs" />
     <Compile Include="IMethodBodyRewriter.cs" />

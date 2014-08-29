@@ -5,22 +5,22 @@ namespace Deflector
 {
     public static class MethodCallProviderRegistry
     {
-        private static Func<object, Type, StackTrace, IMethodCallProvider> _resolver;
+        private static IMethodCallProvider _methodCallProvider;
         private static readonly object _lock = new object();
-        public static void SetResolver(Func<object, Type, StackTrace, IMethodCallProvider> resolver)
-        {
-            _resolver = resolver;
-        }
 
-        public static IMethodCallProvider GetProvider(object instance, Type declaringType, StackTrace stackTrace)
+        public static void SetProvider(IMethodCallProvider provider)
         {
             lock (_lock)
             {
-                if (_resolver != null)
-                    return _resolver(instance, declaringType, stackTrace);
+                _methodCallProvider = provider;
             }
-
-            return null;
+        }
+        public static IMethodCallProvider GetProvider()
+        {
+            lock (_lock)
+            {
+                return _methodCallProvider;
+            }
         }
 
     }

@@ -110,9 +110,6 @@ namespace Deflector
                 il.Emit(OpCodes.Stloc, _currentArguments);
 
                 // Obtain the method call provider instance
-                il.Emit(method.HasThis ? OpCodes.Ldarg_0 : OpCodes.Ldnull);
-                il.PushType(method.DeclaringType, module);
-                il.PushStackTrace(module);
                 il.Emit(OpCodes.Call, getProvider);
 
                 il.Emit(OpCodes.Stloc, provider);
@@ -139,7 +136,7 @@ namespace Deflector
                 il.Emit(OpCodes.Stloc, _interceptedMethods);
 
                 // Populate the array of intercepted methods
-                
+
                 for (var i = 0; i < targetMethodCount; i++)
                 {
                     var currentMethod = interceptedMethods[i];
@@ -151,6 +148,8 @@ namespace Deflector
 
                 // Build the list of intercepted methods
                 il.Emit(OpCodes.Ldloc, provider);
+                il.Emit(OpCodes.Ldloc, _target);
+                il.PushMethod(method, module);
                 il.Emit(OpCodes.Ldloc, _interceptedMethods);
                 il.Emit(OpCodes.Ldloc, _callMap);
                 il.PushStackTrace(module);
@@ -170,7 +169,7 @@ namespace Deflector
                     if (opCode == OpCodes.Call || opCode == OpCodes.Callvirt)
                         ReplaceMethodCallInstruction(instruction, method, il);
 
-                    if(opCode == OpCodes.Newobj)
+                    if (opCode == OpCodes.Newobj)
                         ReplaceConstructorCall(instruction, method, il);
                 }
             }

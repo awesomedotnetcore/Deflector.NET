@@ -13,7 +13,7 @@ namespace Deflector
             var allClasses = allTypes.Where(t => t.IsClass && !t.IsInterface).ToArray();
 
             var allMethods = allClasses.SelectMany(c => c.Methods)
-                .Where(m => !m.IsSpecialName && m.HasBody);
+                .Where(m => m.HasBody && !m.IsAbstract && m.Name != ".cctor");
 
             rewriter.ImportReferences(mainModule);
 
