@@ -95,6 +95,8 @@ namespace Deflector
             {
                 var il = body.GetILProcessor();
                 var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference).ToArray();
+                var constructors =
+                    constructorCalls.Select(instruction => instruction.Operand as MethodReference).ToArray();
 
                 // Precalculate all method call interceptors            
                 var addMethod = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("Add", typeof(MethodBase),
@@ -126,17 +128,21 @@ namespace Deflector
                 il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
 
                 // if (provider != null) {
+                var interceptedMethods = new List<MethodReference>();
+                interceptedMethods.AddRange(targetMethods);
+                interceptedMethods.AddRange(constructors);
 
                 // Store the list of intercepted methods
-                var targetMethodCount = targetMethods.Length;
+                var targetMethodCount = interceptedMethods.Count;
                 il.Emit(OpCodes.Ldc_I4, targetMethodCount);
                 il.Emit(OpCodes.Newarr, module.ImportType<MethodBase>());
                 il.Emit(OpCodes.Stloc, _interceptedMethods);
 
                 // Populate the array of intercepted methods
+                
                 for (var i = 0; i < targetMethodCount; i++)
                 {
-                    var currentMethod = targetMethods[i];
+                    var currentMethod = interceptedMethods[i];
                     il.Emit(OpCodes.Ldloc, _interceptedMethods);
                     il.Emit(OpCodes.Ldc_I4, i);
                     il.PushMethod(currentMethod, module);
@@ -176,7 +182,45 @@ namespace Deflector
         private void ReplaceConstructorCall(Instruction oldInstruction, MethodDefinition hostMethod,
             ILProcessor il)
         {
+            var constructor = (MethodReference)oldInstruction.Operand;
+            var module = hostMethod.Module;
+
+            // Get the IMethodCall instance for the current constructor
+            il.Emit(OpCodes.Ldloc, _callMap);
+            il.PushMethod(constructor, module);
+            il.Emit(OpCodes.Callvirt, _getMethodCall);
+            il.Emit(OpCodes.Stloc, _currentMethodCall);
+
+            var skipInterception = il.Create(OpCodes.Nop);
+
+            il.Emit(OpCodes.Ldloc, _currentMethodCall);
+
+            // if (currentMethodCall != null) {
+            il.Emit(OpCodes.Brfalse, skipInterception);
+            var endLabel = il.Create(OpCodes.Nop);
+
+            il.Emit(OpCodes.Ldloc, _currentMethodCall);
+
+            // Save the InvocationInfo
+            var returnType = constructor.DeclaringType;
+            SaveMethodCallInvocationInfo(il, constructor, module, returnType);
+
+            // var returnValue = currentMethodCall.Invoke(invocationInfo);
+            il.Emit(OpCodes.Ldloc, _invocationInfo);
+            il.Emit(OpCodes.Callvirt, _invokeMethod);
+
+            il.PackageReturnValue(module, returnType);
+
+            il.Emit(OpCodes.Br, endLabel);
+            // } else {
+
+            il.Append(skipInterception);
+
+            // Call the original constructor
             il.Append(oldInstruction);
+            // }
+
+            il.Append(endLabel);
         }
 
         private void ReplaceMethodCallInstruction(Instruction oldInstruction, MethodDefinition hostMethod,
