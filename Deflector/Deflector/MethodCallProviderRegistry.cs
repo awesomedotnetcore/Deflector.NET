@@ -1,25 +1,35 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Deflector
 {
     public static class MethodCallProviderRegistry
     {
-        private static IMethodCallProvider _methodCallProvider;
+        private static readonly List<IMethodCallProvider> _providers = new List<IMethodCallProvider>();
         private static readonly object _lock = new object();
 
-        public static void SetProvider(IMethodCallProvider provider)
+        public static void AddProvider(IMethodCallProvider methodCallProvider)
         {
             lock (_lock)
             {
-                _methodCallProvider = provider;
+                _providers.Add(methodCallProvider);    
+            }            
+        }
+
+        public static void Clear()
+        {
+            lock (_lock)
+            {
+                _providers.Clear();
             }
         }
         public static IMethodCallProvider GetProvider()
         {
             lock (_lock)
             {
-                return _methodCallProvider;
+                return new CompositeMethodCallProvider(_providers);
             }
         }
 

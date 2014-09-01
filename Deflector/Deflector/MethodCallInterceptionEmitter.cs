@@ -103,11 +103,7 @@ namespace Deflector
                     typeof(IMethodCall));
 
                 var provider = method.AddLocal<IMethodCallProvider>();
-                var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));
-
-                // Create the stack that will hold the method arguments
-                il.Emit(OpCodes.Newobj, _stackCtor);
-                il.Emit(OpCodes.Stloc, _currentArguments);
+                var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));                
 
                 // Obtain the method call provider instance
                 il.Emit(OpCodes.Call, getProvider);
@@ -165,6 +161,10 @@ namespace Deflector
                         il.Append(instruction);
                         continue;
                     }
+
+                    // Create the stack that will hold the method arguments
+                    il.Emit(OpCodes.Newobj, _stackCtor);
+                    il.Emit(OpCodes.Stloc, _currentArguments);
 
                     if (opCode == OpCodes.Call || opCode == OpCodes.Callvirt)
                         ReplaceMethodCallInstruction(instruction, method, il);
