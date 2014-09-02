@@ -29,6 +29,7 @@ namespace Deflector
         private MethodReference _stackCtor;
         private MethodReference _markerAttributeCtor;
         private MethodReference _addMethodCalls;
+        private MethodReference _containsKey;
 
         private TypeReference _markerAttributeType;
 
@@ -37,6 +38,8 @@ namespace Deflector
             _pushMethod = module.ImportMethod<Stack<object>>("Push");
             _toArray = module.ImportMethod<Stack<object>>("ToArray");
             _getMethodCall = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("get_Item");
+            _containsKey = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("ContainsKey");
+
             _invokeMethod = module.ImportMethod<IMethodCall>("Invoke");
             _stackCtor = module.ImportConstructor<Stack<object>>(new Type[0]);
             _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>(new Type[0]);
@@ -99,8 +102,6 @@ namespace Deflector
                     constructorCalls.Select(instruction => instruction.Operand as MethodReference).ToArray();
 
                 // Precalculate all method call interceptors            
-                var addMethod = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("Add", typeof(MethodBase),
-                    typeof(IMethodCall));
 
                 var provider = method.AddLocal<IMethodCallProvider>();
                 var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));                
@@ -184,13 +185,20 @@ namespace Deflector
             var constructor = (MethodReference)oldInstruction.Operand;
             var module = hostMethod.Module;
 
+            // TODO: Call Dictionary<,>.ContainsKey to check if there is a replacement method call for the current method
             // Get the IMethodCall instance for the current constructor
+            il.Emit(OpCodes.Ldloc, _callMap);
+            il.PushMethod(constructor, module);
+            il.Emit(OpCodes.Callvirt, _containsKey);
+
+            var skipInterception = il.Create(OpCodes.Nop);
+            il.Emit(OpCodes.Brfalse, skipInterception);
+
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(constructor, module);
             il.Emit(OpCodes.Callvirt, _getMethodCall);
             il.Emit(OpCodes.Stloc, _currentMethodCall);
 
-            var skipInterception = il.Create(OpCodes.Nop);
 
             il.Emit(OpCodes.Ldloc, _currentMethodCall);
 
@@ -241,7 +249,13 @@ namespace Deflector
 
             // Grab the method call instance
             il.Emit(OpCodes.Ldloc, _callMap);
+            il.PushMethod(targetMethod, module);
+            il.Emit(OpCodes.Callvirt, _containsKey);
 
+            var skipInterception = il.Create(OpCodes.Nop);
+            il.Emit(OpCodes.Brfalse, skipInterception);
+
+            il.Emit(OpCodes.Ldloc, _callMap);
 
             il.PushMethod(targetMethod, module);
 
@@ -249,8 +263,7 @@ namespace Deflector
 
 
             il.Emit(OpCodes.Stloc, _currentMethodCall);
-
-            var skipInterception = il.Create(OpCodes.Nop);
+            
 
             il.Emit(OpCodes.Ldloc, _currentMethodCall);
             il.Emit(OpCodes.Brfalse, skipInterception);
