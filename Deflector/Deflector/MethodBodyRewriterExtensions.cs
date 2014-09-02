@@ -8,6 +8,7 @@ namespace Deflector
         public static void Rewrite(this IMethodBodyRewriter rewriter, AssemblyDefinition assembly)
         {
             var mainModule = assembly.MainModule;
+            var objectType = mainModule.ImportType<object>();
 
             var allTypes = mainModule.Types.Where(t => t.Name != "<Module>");
             var allClasses = allTypes.Where(t => t.IsClass && !t.IsInterface).ToArray();

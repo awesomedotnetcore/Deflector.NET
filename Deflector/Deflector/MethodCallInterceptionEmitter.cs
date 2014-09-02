@@ -96,10 +96,11 @@ namespace Deflector
             // Skip the method if there are no calls to intercept
             if (callInstructions.Any() || constructorCalls.Any())
             {
+                var objectType = module.ImportType<object>();
                 var il = body.GetILProcessor();
                 var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference).ToArray();
                 var constructors =
-                    constructorCalls.Select(instruction => instruction.Operand as MethodReference).ToArray();
+                    constructorCalls.Select(instruction => instruction.Operand as MethodReference).Where(c=>c.DeclaringType != objectType).ToArray();
 
                 // Precalculate all method call interceptors            
 
@@ -185,6 +186,16 @@ namespace Deflector
             var constructor = (MethodReference)oldInstruction.Operand;
             var module = hostMethod.Module;
 
+            // Skip the System.Object ctor call
+            var objectType = module.ImportType<object>();
+
+            if (constructor.DeclaringType == objectType)
+            {
+                il.Append(oldInstruction);
+                return;
+            }
+                
+
             // TODO: Call Dictionary<,>.ContainsKey to check if there is a replacement method call for the current method
             // Get the IMethodCall instance for the current constructor
             il.Emit(OpCodes.Ldloc, _callMap);
@@ -243,10 +254,13 @@ namespace Deflector
             var targetMethod = (MethodReference)oldInstruction.Operand;
             var module = hostMethod.Module;
 
-            // Value type constructor calls are not supported
+            // Replacing constructor calls with the OpCodes.Call instruction is not supported
             if (targetMethod.Name == ".ctor" || targetMethod.Name == ".cctor" && opCode == OpCodes.Call)
+            {
+                il.Append(oldInstruction);
                 return;
-
+            }
+                
             // Grab the method call instance
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(targetMethod, module);
