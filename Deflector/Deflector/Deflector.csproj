@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="LinFu.Finders">
+      <HintPath>..\..\..\AOPBench\packages\LinFu.Finders.1.0.1\lib\LinFu.Finders.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -54,6 +57,7 @@
   <ItemGroup>
     <Compile Include="AssemblyDefinitionExtensions.cs" />
     <Compile Include="CompositeMethodCallProvider.cs" />
+    <Compile Include="DelegateMethodCall.cs" />
     <Compile Include="IInvocationInfo.cs" />
     <Compile Include="ILProcessorExtensions.cs" />
     <Compile Include="IMethodBodyRewriter.cs" />
@@ -61,11 +65,14 @@
     <Compile Include="IMethodCallProvider.cs" />
     <Compile Include="InvocationInfo.cs" />
     <Compile Include="InvocationInfoEmitter.cs" />
+    <Compile Include="MethodBag.cs" />
     <Compile Include="MethodBodyRewriterExtensions.cs" />
     <Compile Include="MethodCallInterceptionEmitter.cs" />
     <Compile Include="MethodCallProviderRegistry.cs" />
     <Compile Include="MethodCallsAlreadyInterceptedAttribute.cs" />
     <Compile Include="MethodDefinitionExtensions.cs" />
+    <Compile Include="MethodFinderExtensions.cs" />
+    <Compile Include="Mocking\ExternalCallMocker.cs" />
     <Compile Include="ModuleDefinitionExtensions.cs" />
     <Compile Include="ParameterDefinitionExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
