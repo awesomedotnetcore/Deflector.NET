@@ -44,7 +44,8 @@ namespace Deflector.MSBuild.Tasks
                 var emitter = new MethodCallInterceptionEmitter();
                 emitter.Rewrite(assembly);
 
-                assembly.Write(outputFile);
+                var parameters = new WriterParameters() { WriteSymbols = true };
+                assembly.Write(outputFile, parameters);
 
                 result = true;
             }
