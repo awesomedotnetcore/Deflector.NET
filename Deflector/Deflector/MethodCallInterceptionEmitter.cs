@@ -85,8 +85,7 @@ namespace Deflector
             var body = method.Body;
             body.InitLocals = true;
 
-            var oldInstructions = body.Instructions.ToArray();
-            body.Instructions.Clear();
+            var oldInstructions = body.Instructions.ToArray();            
 
             var callInstructions = oldInstructions.Where(instruction => instruction.OpCode == OpCodes.Call ||
                                                                         instruction.OpCode == OpCodes.Callvirt).ToArray();
@@ -96,6 +95,10 @@ namespace Deflector
             // Skip the method if there are no calls to intercept
             if (callInstructions.Any() || constructorCalls.Any())
             {
+                // Clear the method body if and only if there are methods 
+                // that need to be intercepted
+                body.Instructions.Clear();
+
                 var objectType = module.ImportType<object>();
                 var il = body.GetILProcessor();
                 var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference).ToArray();
