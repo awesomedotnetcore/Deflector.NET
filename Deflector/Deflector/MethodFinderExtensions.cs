@@ -117,5 +117,12 @@ namespace Deflector
             var methodInfo = (MethodInfo)currentMethod;
             return candidateMethods.GetBestMatch(typeArguments, parameterTypes, methodInfo.ReturnType);
         }
+
+        public static bool HasCompatibleMethodSignatureWith(this MethodBase method, MethodBase targetMethod)
+        {
+            var candidates = new[] { method };
+            var hasCompatibleMethodSignature = candidates.GetBestMatch(targetMethod) != null;
+            return hasCompatibleMethodSignature;
+        }
     }
 }

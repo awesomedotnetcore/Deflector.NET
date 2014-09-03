@@ -72,7 +72,6 @@
     <Compile Include="MethodCallsAlreadyInterceptedAttribute.cs" />
     <Compile Include="MethodDefinitionExtensions.cs" />
     <Compile Include="MethodFinderExtensions.cs" />
-    <Compile Include="Mocking\ExternalCallMocker.cs" />
     <Compile Include="ModuleDefinitionExtensions.cs" />
     <Compile Include="ParameterDefinitionExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
