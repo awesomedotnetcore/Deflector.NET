@@ -60,6 +60,18 @@ namespace Deflector
             WithConstructorImpl(getConstructorData, implementation);
         }
 
+        private static void WithConstructorImpl<TResult>(Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            MulticastDelegate implementation)
+        {
+            var constructorData = getConstructorData();
+            var constructors = constructorData.Key;
+            var implementationMethod = implementation.Method;
+            var bestMatch = constructors.GetBestMatch(implementationMethod);
+            if (bestMatch == null)
+                throw new InvalidOperationException(string.Format("Unable to find a compatible constructor from type '{0}' that matches the current implementation delegate.", typeof(TResult).FullName));
+
+
+        }
         public static Func<Tuple<PropertyInfo, T>> Property<TObject, T>(Expression<Func<TObject, T>> p)
         {
             return () =>
@@ -84,7 +96,7 @@ namespace Deflector
             if (targetMethod == null)
                 throw new InvalidOperationException(string.Format("The property '{0}' has no setter method.", propertyInfo.Name));
 
-            AddMethodCall(targetMethod, setterImplementation);
+            AddMethodCall(setterImplementation, targetMethod);
         }
 
         public static void WithGetter<T>(this Func<Tuple<PropertyInfo, T>> getPropertyData, Func<T> getterImplementation)
@@ -95,7 +107,7 @@ namespace Deflector
             if (targetMethod == null)
                 throw new InvalidOperationException(string.Format("The property '{0}' has no getter method.", propertyInfo.Name));
 
-            AddMethodCall(targetMethod, getterImplementation);
+            AddMethodCall(getterImplementation, targetMethod);
         }
 
         public static Func<MethodBase> Method<TObject>(Expression<Action<TObject>> expression)
@@ -209,6 +221,12 @@ namespace Deflector
         public static void WithDelegate(this Func<MethodBase> methodSelector, MulticastDelegate implementation)
         {
             var targetMethod = methodSelector();
+
+            AddMethodCall(implementation, targetMethod);
+        }
+
+        private static void AddMethodCall(MulticastDelegate implementation, MethodBase targetMethod)
+        {
             // Verify that the method and the implementation have compatible signatures
             var method = implementation.Method;
             var hasCompatibleMethodSignature = method.HasCompatibleMethodSignatureWith(targetMethod);
@@ -219,7 +237,7 @@ namespace Deflector
                         targetMethod.Name));
 
             MethodCallProviderRegistry.AddProvider(new SingleMethodCallProvider(targetMethod, implementation));
-        }        
+        }
 
         private static MethodInfo GetMethodImpl(LambdaExpression expression)
         {
@@ -237,6 +255,11 @@ namespace Deflector
         private static MethodInfo GetMethodByCall(LambdaExpression expression)
         {
             return ((MethodCallExpression)expression.Body).Method;
+        }
+
+        private static PropertyInfo GetPropertyImpl(LambdaExpression p)
+        {
+            return (PropertyInfo)((MemberExpression)(p.Body)).Member;
         }
     }
 }
