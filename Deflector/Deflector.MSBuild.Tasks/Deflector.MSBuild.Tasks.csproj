@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Deflector, Version=1.0.5359.25963, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\AOPBench\packages\Deflector.1.0.5359.25963\lib\net40\Deflector.dll</HintPath>
+    </Reference>
     <Reference Include="LinFu.Finders">
       <HintPath>..\packages\LinFu.Finders.1.0.1\lib\LinFu.Finders.dll</HintPath>
     </Reference>
@@ -63,12 +67,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Deflector\Deflector.csproj">
-      <Project>{41f6c644-cc4e-4beb-ba8e-7bd6450727ee}</Project>
-      <Name>Deflector</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="Deflector.MSBuild.Tasks.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -12,5 +12,10 @@
     <description>$description$</description>
     <copyright>Copyright 2014 Philip Laureano</copyright>
     <tags>mocking ilasm rewriting aop msbuild</tags>
+    <dependencies>
+      <dependency id="LinFu.Finders" version="1.0.1" />
+      <dependency id="Mono.Cecil" version="0.9.5.4" />
+      <dependency id="Deflector" version="1.0.5359.25963" />
+    </dependencies>
   </metadata>
 </package>
