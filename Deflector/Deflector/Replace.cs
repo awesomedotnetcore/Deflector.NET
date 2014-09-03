@@ -9,10 +9,86 @@ namespace Deflector
 {
     public static class Replace
     {
+        public static Func<KeyValuePair<IEnumerable<MethodBase>, T>> ConstructorCallOn<T>()
+        {
+            return () =>
+            {
+                var constructors =
+                    typeof(T).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+                return new KeyValuePair<IEnumerable<MethodBase>, T>(constructors, default(T));
+            };
+        }
+
+        public static void With<T1, T2, T3, T4, T5, T6, T7, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, T4, T5, T6, T7, TResult> implementation)
+        {
+            WithConstructorImpl(getConstructorData, implementation);
+        }
+
+        public static void With<T1, T2, T3, T4, T5, T6, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, T4, T5, T6, TResult> implementation)
+        {
+            WithConstructorImpl(getConstructorData, implementation);
+        }
+
+        public static void With<T1, T2, T3, T4, T5, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, T4, T5, TResult> implementation)
+        {
+            WithConstructorImpl(getConstructorData, implementation);
+        }
+
+        public static void With<T1, T2, T3, T4, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, T4, TResult> implementation)
+        {
+            WithConstructorImpl(getConstructorData, implementation);
+        }
+
+        public static void With<T1, T2, T3, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, TResult> implementation)
+        {
+            WithConstructorImpl(getConstructorData, implementation);
+        }
+
+        public static void With<T1, T2, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, TResult> implementation)
+        {
+            WithConstructorImpl(getConstructorData, implementation);
+        }
+
+        public static void With<T1, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, TResult> implementation)
+        {
+            WithConstructorImpl(getConstructorData, implementation);
+        }
+
+        public static void With<TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<TResult> implementation)
+        {
+            WithConstructorImpl(getConstructorData, implementation);
+        }
+
+        public static Func<MethodBase> PropertyGetter<TObject, T>(Expression<Func<TObject, T>> p)
+        {
+            var propertyInfo = GetPropertyImpl(p);
+            return propertyInfo.GetGetMethod;
+        }
+
+        public static Func<MethodBase> PropertyGetter<T>(Expression<Func<T>> p)
+        {
+            var propertyInfo = GetPropertyImpl(p);
+            return propertyInfo.GetGetMethod;
+        }
+
+        public static Func<MethodBase> PropertySetter<TObject, T>(Expression<Func<TObject, T>> p)
+        {
+            var propertyInfo = GetPropertyImpl(p);
+            return propertyInfo.GetSetMethod;
+        }
+
+        public static Func<MethodBase> PropertySetter<T>(Expression<Func<T>> p)
+        {
+            var propertyInfo = GetPropertyImpl(p);
+            return propertyInfo.GetSetMethod;
+        }
+
         public static Func<MethodBase> Method<TObject>(Expression<Action<TObject>> expression)
         {
             return () => GetMethodByCall(expression);
         }
+
         public static Func<MethodBase> Method(Expression<Action> expression)
         {
             return () => GetMethodByCall(expression);
