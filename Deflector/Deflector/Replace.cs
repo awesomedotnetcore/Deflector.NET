@@ -60,28 +60,42 @@ namespace Deflector
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static Func<MethodBase> PropertyGetter<TObject, T>(Expression<Func<TObject, T>> p)
+        public static Func<Tuple<PropertyInfo, T>> Property<TObject, T>(Expression<Func<TObject, T>> p)
         {
-            var propertyInfo = GetPropertyImpl(p);
-            return propertyInfo.GetGetMethod;
+            return () =>
+            {
+                var propertyInfo = GetPropertyImpl(p);
+                return Tuple.Create(propertyInfo, default(T));
+            };
         }
 
-        public static Func<MethodBase> PropertyGetter<T>(Expression<Func<T>> p)
+        public static void With<T>(this Func<Tuple<PropertyInfo, T>> getPropertyData, Func<T> getterImplementation,
+            Action<T> setterImplementation)
         {
-            var propertyInfo = GetPropertyImpl(p);
-            return propertyInfo.GetGetMethod;
+            getPropertyData.WithGetter(getterImplementation);
+            getPropertyData.WithSetter(setterImplementation);
         }
 
-        public static Func<MethodBase> PropertySetter<TObject, T>(Expression<Func<TObject, T>> p)
+        public static void WithSetter<T>(this Func<Tuple<PropertyInfo, T>> getPropertyData, Action<T> setterImplementation)
         {
-            var propertyInfo = GetPropertyImpl(p);
-            return propertyInfo.GetSetMethod;
+            var metaData = getPropertyData();
+            var propertyInfo = metaData.Item1;
+            var targetMethod = propertyInfo.GetSetMethod();
+            if (targetMethod == null)
+                throw new InvalidOperationException(string.Format("The property '{0}' has no setter method.", propertyInfo.Name));
+
+            AddMethodCall(targetMethod, setterImplementation);
         }
 
-        public static Func<MethodBase> PropertySetter<T>(Expression<Func<T>> p)
+        public static void WithGetter<T>(this Func<Tuple<PropertyInfo, T>> getPropertyData, Func<T> getterImplementation)
         {
-            var propertyInfo = GetPropertyImpl(p);
-            return propertyInfo.GetSetMethod;
+            var metaData = getPropertyData();
+            var propertyInfo = metaData.Item1;
+            var targetMethod = propertyInfo.GetGetMethod();
+            if (targetMethod == null)
+                throw new InvalidOperationException(string.Format("The property '{0}' has no getter method.", propertyInfo.Name));
+
+            AddMethodCall(targetMethod, getterImplementation);
         }
 
         public static Func<MethodBase> Method<TObject>(Expression<Action<TObject>> expression)
