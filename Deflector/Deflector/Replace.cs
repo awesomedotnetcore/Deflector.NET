@@ -66,11 +66,11 @@ namespace Deflector
             var constructorData = getConstructorData();
             var constructors = constructorData.Key;
             var implementationMethod = implementation.Method;
-            var bestMatch = constructors.GetBestMatch(implementationMethod);
-            if (bestMatch == null)
+            var matchingConstructor = constructors.GetBestMatch(implementationMethod);
+            if (matchingConstructor == null)
                 throw new InvalidOperationException(string.Format("Unable to find a compatible constructor from type '{0}' that matches the current implementation delegate.", typeof(TResult).FullName));
 
-
+            AddMethodCall(matchingConstructor, implementation);
         }
         public static Func<Tuple<PropertyInfo, T>> Property<TObject, T>(Expression<Func<TObject, T>> p)
         {
