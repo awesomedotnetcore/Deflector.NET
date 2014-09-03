@@ -147,6 +147,7 @@ namespace Deflector
         {
             methodSelector.WithDelegate(implementation);
         }
+
         public static void With<T1, T2>(this Func<MethodBase> methodSelector, Action<T1, T2> implementation)
         {
             methodSelector.WithDelegate(implementation);
@@ -156,10 +157,12 @@ namespace Deflector
         {
             methodSelector.WithDelegate(implementation);
         }
+
         public static void With(this Func<MethodBase> methodSelector, Action implementation)
         {
             methodSelector.WithDelegate(implementation);
         }
+
         public static void With<T1, T2, T3, T4, T5, T6, T7, TResult>(this Func<MethodBase> methodSelector,
             Func<T1, T2, T3, T4, T5, T6, T7, TResult> implementation)
         {
