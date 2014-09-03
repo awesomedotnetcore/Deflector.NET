@@ -301,7 +301,7 @@ namespace Deflector
 
             var skipMethodCall = il.Create(OpCodes.Nop);
 
-            if (returnType.FullName != "System.Void")
+            if (returnType.FullName != "System.Void" && !returnType.IsValueType)
                 il.Emit(OpCodes.Ldnull);
 
             il.Emit(OpCodes.Br, skipMethodCall);
