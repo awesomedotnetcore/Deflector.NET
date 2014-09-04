@@ -25,7 +25,6 @@ namespace Deflector
         private VariableDefinition _currentMethod;
         private VariableDefinition _stackTrace;
         private VariableDefinition _currentArgsAsArray;
-        private VariableDefinition _returnValue;
 
         private MethodReference _pushMethod;
         private MethodReference _toArray;
@@ -82,7 +81,6 @@ namespace Deflector
             _currentMethod = hostMethod.AddLocal<MethodBase>();
             _stackTrace = hostMethod.AddLocal<StackTrace>();
             _currentArgsAsArray = hostMethod.AddLocal<object[]>();
-            _returnValue = hostMethod.AddLocal<object>();
         }
 
         public void Rewrite(MethodDefinition method, ModuleDefinition module)
@@ -296,7 +294,6 @@ namespace Deflector
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(targetMethod, module);
             il.Emit(OpCodes.Callvirt, _containsKey);
-
 
 
             var skipInterception = il.Create(OpCodes.Nop);
