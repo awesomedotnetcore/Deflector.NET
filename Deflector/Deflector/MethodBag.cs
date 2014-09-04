@@ -39,7 +39,7 @@ namespace Deflector
             _staticMethods[methodName].Add(implementation);
         }
 
-        public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, IDictionary<MethodBase, IMethodCall> methodCallMap,
+        public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, IMethodCallMap methodCallMap,
             StackTrace stackTrace)
         {
             var calledMethods = GetInterceptedMethods(interceptedMethods).ToArray();
@@ -52,7 +52,7 @@ namespace Deflector
         }
 
         protected virtual void AddAdditionalMethodCalls(object target, MethodBase hostMethod,
-            IEnumerable<MethodBase> interceptedMethods, IDictionary<MethodBase, IMethodCall> methodCallMap,
+            IEnumerable<MethodBase> interceptedMethods, IMethodCallMap methodCallMap,
             StackTrace stackTrace)
         {
         }
@@ -61,7 +61,7 @@ namespace Deflector
             return interceptedMethods;
         }
 
-        private void MapConstructors(IDictionary<MethodBase, IMethodCall> methodCallMap, IEnumerable<MethodBase> mockedMethods)
+        private void MapConstructors(IMethodCallMap methodCallMap, IEnumerable<MethodBase> mockedMethods)
         {
             var mockedConstructors = mockedMethods.Where(m => m.Name == ".ctor" && m.IsSpecialName);
             var constructorMap = new ConcurrentDictionary<string, IList<MulticastDelegate>>();
@@ -69,21 +69,21 @@ namespace Deflector
             MapMethodCalls(methodCallMap, new[] { ".ctor" }, mockedConstructors, constructorMap);
         }
 
-        private void MapStaticMethods(IDictionary<MethodBase, IMethodCall> methodCallMap, MethodBase[] mockedMethods)
+        private void MapStaticMethods(IMethodCallMap methodCallMap, MethodBase[] mockedMethods)
         {
             var mockedStaticMethodNames = mockedMethods.Where(m => _staticMethods.ContainsKey(m.Name)).Select(m => m.Name);
             var mockedStaticMethods = mockedMethods.Where(m => m.IsStatic).ToArray();
             MapMethodCalls(methodCallMap, mockedStaticMethodNames, mockedStaticMethods, _staticMethods);
         }
 
-        private void MapInstanceMethods(IDictionary<MethodBase, IMethodCall> methodCallMap, MethodBase[] mockedMethods)
+        private void MapInstanceMethods(IMethodCallMap methodCallMap, MethodBase[] mockedMethods)
         {
             var mockedInstanceMethods = mockedMethods.Where(m => !m.IsStatic);
             var mockedInstanceMethodNames = mockedMethods.Where(m => _instanceMethods.ContainsKey(m.Name)).Select(m => m.Name);
             MapMethodCalls(methodCallMap, mockedInstanceMethodNames, mockedInstanceMethods, _instanceMethods);
         }
 
-        private void MapMethodCalls(IDictionary<MethodBase, IMethodCall> methodCallMap, IEnumerable<string> mockedMethodNames,
+        private void MapMethodCalls(IMethodCallMap methodCallMap, IEnumerable<string> mockedMethodNames,
             IEnumerable<MethodBase> mockedMethods, IDictionary<string, IList<MulticastDelegate>> methods)
         {
             var allMockedMethods = mockedMethods.ToArray();
@@ -101,7 +101,7 @@ namespace Deflector
 
                     var targetDelegate = delegateMap[bestMatch];
                     var methodCall = new DelegateMethodCall(targetDelegate);
-                    methodCallMap[currentMethod] = methodCall;
+                    methodCallMap.Add(currentMethod, methodCall);
                 }
             }
         }

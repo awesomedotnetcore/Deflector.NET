@@ -21,7 +21,7 @@ namespace Deflector
             _methodCallProviders = methodCallProviders;
         }
 
-        public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, IDictionary<MethodBase, IMethodCall> methodCallMap,
+        public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, IMethodCallMap methodCallMap,
             StackTrace stackTrace)
         {
             foreach (var provider in _methodCallProviders)

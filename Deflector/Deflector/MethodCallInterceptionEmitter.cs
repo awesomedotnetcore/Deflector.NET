@@ -21,6 +21,11 @@ namespace Deflector
         private VariableDefinition _callMap;
         private VariableDefinition _currentMethodCall;
         private VariableDefinition _interceptedMethods;
+        private VariableDefinition _hasMethodCall;
+        private VariableDefinition _currentMethod;
+        private VariableDefinition _stackTrace;
+        private VariableDefinition _currentArgsAsArray;
+        private VariableDefinition _returnValue;
 
         private MethodReference _pushMethod;
         private MethodReference _toArray;
@@ -38,8 +43,8 @@ namespace Deflector
         {
             _pushMethod = module.ImportMethod<Stack<object>>("Push");
             _toArray = module.ImportMethod<Stack<object>>("ToArray");
-            _getMethodCall = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("get_Item");
-            _containsKey = module.ImportMethod<IDictionary<MethodBase, IMethodCall>>("ContainsKey");
+            _getMethodCall = module.ImportMethod<IMethodCallMap>("GetMethodCall");
+            _containsKey = module.ImportMethod<IMethodCallMap>("ContainsMappingFor");
 
             _invokeMethod = module.ImportMethod<IMethodCall>("Invoke");
             _stackCtor = module.ImportConstructor<Stack<object>>(new Type[0]);
@@ -72,7 +77,12 @@ namespace Deflector
             _typeArguments = hostMethod.AddLocal<Type[]>("__typeArguments");
             _interceptedMethods = hostMethod.AddLocal<MethodBase[]>("___interceptedMethods");
 
-            _callMap = hostMethod.AddLocal<IDictionary<MethodBase, IMethodCall>>();
+            _callMap = hostMethod.AddLocal<IMethodCallMap>();
+            _hasMethodCall = hostMethod.AddLocal<bool>();
+            _currentMethod = hostMethod.AddLocal<MethodBase>();
+            _stackTrace = hostMethod.AddLocal<StackTrace>();
+            _currentArgsAsArray = hostMethod.AddLocal<object[]>();
+            _returnValue = hostMethod.AddLocal<object>();
         }
 
         public void Rewrite(MethodDefinition method, ModuleDefinition module)
@@ -116,11 +126,16 @@ namespace Deflector
                 il.Emit(OpCodes.Stloc, provider);
 
                 // Instantiate the map
-                var mapCtor = module.ImportConstructor<ConcurrentDictionary<MethodBase, IMethodCall>>(new Type[0]);
-                il.Emit(OpCodes.Newobj, mapCtor);
+                var createMap = module.ImportMethod("CreateMap", typeof(MethodCallMapRegistry),
+                    BindingFlags.Public | BindingFlags.Static);
+
+                il.Emit(OpCodes.Call, createMap);
                 il.Emit(OpCodes.Stloc, _callMap);
 
                 var skipCallMapConstruction = il.Create(OpCodes.Nop);
+
+                il.Emit(OpCodes.Ldloc, _callMap);
+                il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
 
                 il.Emit(OpCodes.Ldloc, provider);
                 il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
@@ -161,6 +176,15 @@ namespace Deflector
                 foreach (var instruction in oldInstructions)
                 {
                     var opCode = instruction.OpCode;
+                    if (opCode == OpCodes.Newobj)
+                    {
+                        il.Emit(OpCodes.Newobj, _stackCtor);
+                        il.Emit(OpCodes.Stloc, _currentArguments);
+                        ReplaceConstructorCall(instruction, method, il);
+                        continue;
+                    }
+
+
                     if (opCode != OpCodes.Call && opCode != OpCodes.Callvirt)
                     {
                         il.Append(instruction);
@@ -173,9 +197,6 @@ namespace Deflector
 
                     if (opCode == OpCodes.Call || opCode == OpCodes.Callvirt)
                         ReplaceMethodCallInstruction(instruction, method, il);
-
-                    if (opCode == OpCodes.Newobj)
-                        ReplaceConstructorCall(instruction, method, il);
                 }
             }
 
@@ -199,47 +220,47 @@ namespace Deflector
             }
 
 
-            // TODO: Call Dictionary<,>.ContainsKey to check if there is a replacement method call for the current method
-            // Get the IMethodCall instance for the current constructor
+            //AddMethodInterceptionHooks(oldInstruction, il, constructor, module);
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(constructor, module);
             il.Emit(OpCodes.Callvirt, _containsKey);
+            il.Emit(OpCodes.Stloc, _hasMethodCall);
 
             var skipInterception = il.Create(OpCodes.Nop);
+            var endLabel = il.Create(OpCodes.Nop);
+            il.Emit(OpCodes.Ldloc, _hasMethodCall);
             il.Emit(OpCodes.Brfalse, skipInterception);
 
+            // TODO: Insert the interception code here
             il.Emit(OpCodes.Ldloc, _callMap);
+
             il.PushMethod(constructor, module);
+
             il.Emit(OpCodes.Callvirt, _getMethodCall);
             il.Emit(OpCodes.Stloc, _currentMethodCall);
-
-
             il.Emit(OpCodes.Ldloc, _currentMethodCall);
-
-            // if (currentMethodCall != null) {
             il.Emit(OpCodes.Brfalse, skipInterception);
-            var endLabel = il.Create(OpCodes.Nop);
+
+            SaveMethodCallArguments(il, constructor);
+            var systemType = module.Import(typeof(Type));
+
+            // Note: There is no 'this' pointer when the constructor isn't called yet
+            il.Emit(OpCodes.Ldnull);
+            SaveParameterTypes(il, constructor, module, systemType);
+            SaveTypeArguments(il, constructor, module, systemType);
+            SaveCurrentMethod(il, constructor, module);
+            SaveStackTrace(il, module);
+            SaveMethodArgumentsAsArray(il);
+            SaveCurrentInvocationInfo(il);
 
             il.Emit(OpCodes.Ldloc, _currentMethodCall);
-
-            // Save the InvocationInfo
-            var returnType = constructor.DeclaringType;
-            SaveMethodCallInvocationInfo(il, constructor, module, returnType);
-
-            // var returnValue = currentMethodCall.Invoke(invocationInfo);
             il.Emit(OpCodes.Ldloc, _invocationInfo);
             il.Emit(OpCodes.Callvirt, _invokeMethod);
-
-            il.PackageReturnValue(module, returnType);
+            il.Emit(OpCodes.Unbox_Any, constructor.DeclaringType);
 
             il.Emit(OpCodes.Br, endLabel);
-            // } else {
-
             il.Append(skipInterception);
-
-            // Call the original constructor
             il.Append(oldInstruction);
-            // }
 
             il.Append(endLabel);
         }
@@ -264,57 +285,25 @@ namespace Deflector
                 return;
             }
 
+            AddMethodInterceptionHooks(oldInstruction, il, targetMethod, module);
+            // }
+        }
+
+        private void AddMethodInterceptionHooks(Instruction oldInstruction, ILProcessor il, MethodReference targetMethod,
+            ModuleDefinition module)
+        {
             // Grab the method call instance
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(targetMethod, module);
             il.Emit(OpCodes.Callvirt, _containsKey);
 
+
+
             var skipInterception = il.Create(OpCodes.Nop);
             il.Emit(OpCodes.Brfalse, skipInterception);
 
-            il.Emit(OpCodes.Ldloc, _callMap);
 
-            il.PushMethod(targetMethod, module);
-
-            il.Emit(OpCodes.Callvirt, _getMethodCall);
-
-
-            il.Emit(OpCodes.Stloc, _currentMethodCall);
-
-
-            il.Emit(OpCodes.Ldloc, _currentMethodCall);
-            il.Emit(OpCodes.Brfalse, skipInterception);
-
-            // if (currentMethodCall != null) {
-
-            // var returnValue = currentMethodCall.Invoke(methodCallInvocationInfo);
-
-            // Resolve the return type if the target method's declaring type is a generic type
-            var returnType = targetMethod.ReturnType;
-            var declaringType = targetMethod.DeclaringType;
-
-            var genericInstance = declaringType as GenericInstanceType;
-            var fullName = returnType.FullName ?? string.Empty;
-            if (genericInstance != null && fullName.StartsWith("!") &&
-                !string.IsNullOrEmpty(fullName))
-            {
-                var indexText = fullName.Where(char.IsDigit).ToArray();
-                var indexValue = int.Parse(new string(indexText));
-
-                var genericArgument = genericInstance.GenericArguments[indexValue];
-
-                var originalReturnType = returnType;
-                returnType = originalReturnType.IsArray ? genericArgument.MakeArrayType() : genericArgument;
-            }
-
-            SaveMethodCallInvocationInfo(il, targetMethod, module, returnType);
-
-            il.Emit(OpCodes.Ldloc, _currentMethodCall);
-            il.Emit(OpCodes.Ldloc, _invocationInfo);
-            il.Emit(OpCodes.Callvirt, _invokeMethod);
-
-            il.PackageReturnValue(module, returnType);
-
+            EmitMethodCallInterception(il, targetMethod, module, skipInterception);
 
             var skipMethodCall = il.Create(OpCodes.Nop);
 
@@ -327,11 +316,123 @@ namespace Deflector
             il.Emit(oldInstruction.OpCode, targetMethod);
 
             il.Append(skipMethodCall);
-            // }
+        }
+
+        private void EmitMethodCallInterception(ILProcessor il, MethodReference targetMethod, ModuleDefinition module,
+            Instruction skipInterception)
+        {
+            il.Emit(OpCodes.Ldloc, _callMap);
+
+            il.PushMethod(targetMethod, module);
+
+            il.Emit(OpCodes.Callvirt, _getMethodCall);
+
+
+            il.Emit(OpCodes.Stloc, _currentMethodCall);
+
+            il.Emit(OpCodes.Ldloc, _currentMethodCall);
+            il.Emit(OpCodes.Brfalse, skipInterception);
+
+            // if (currentMethodCall != null) {
+
+            // var returnValue = currentMethodCall.Invoke(methodCallInvocationInfo);
+
+            // Resolve the return type if the target method's declaring type is a generic type
+            var returnType = targetMethod.GetReturnType();
+
+            SaveMethodCallInvocationInfo(il, targetMethod, module, returnType);
+
+            il.Emit(OpCodes.Ldloc, _currentMethodCall);
+            il.Emit(OpCodes.Ldloc, _invocationInfo);
+            il.Emit(OpCodes.Callvirt, _invokeMethod);
+
+            il.PackageReturnValue(module, returnType);
         }
 
         private void SaveMethodCallInvocationInfo(ILProcessor il, MethodReference targetMethod, ModuleDefinition module,
             TypeReference returnType)
+        {
+            PushThisPointer(il, targetMethod);
+
+            var systemType = module.Import(typeof(Type));
+            // Push the current method
+            SaveMethodCallArguments(il, targetMethod);
+            SaveCurrentMethod(il, targetMethod, module);
+            SaveStackTrace(il, module);
+            SaveParameterTypes(il, targetMethod, module, systemType);
+            SaveTypeArguments(il, targetMethod, module, systemType);
+            SaveMethodArgumentsAsArray(il);
+
+            SaveCurrentInvocationInfo(il);
+        }
+
+        private void SaveCurrentInvocationInfo(ILProcessor il)
+        {
+            il.Emit(OpCodes.Ldloc, _currentMethod);
+            il.Emit(OpCodes.Ldloc, _stackTrace);
+            il.Emit(OpCodes.Ldloc, _parameterTypes);
+            il.Emit(OpCodes.Ldloc, _typeArguments);
+            il.Emit(OpCodes.Ldloc, _currentArgsAsArray);
+            il.Emit(OpCodes.Newobj, _invocationInfoCtor);
+            il.Emit(OpCodes.Stloc, _invocationInfo);
+        }
+
+        private void SaveMethodArgumentsAsArray(ILProcessor il)
+        {
+            // Save the method arguments
+            il.Emit(OpCodes.Ldloc, _currentArguments);
+            il.Emit(OpCodes.Callvirt, _toArray);
+            il.Emit(OpCodes.Stloc, _currentArgsAsArray);
+        }
+
+        private void SaveStackTrace(ILProcessor il, ModuleDefinition module)
+        {
+            il.PushStackTrace(module);
+            il.Emit(OpCodes.Stloc, _stackTrace);
+        }
+
+        private void SaveCurrentMethod(ILProcessor il, MethodReference targetMethod, ModuleDefinition module)
+        {
+            il.PushMethod(targetMethod, module);
+            il.Emit(OpCodes.Stloc, _currentMethod);
+        }
+
+        private void SaveTypeArguments(ILProcessor il, MethodReference targetMethod, ModuleDefinition module,
+            TypeReference systemType)
+        {
+            // Save the type arguments
+            var genericParameterCount = targetMethod.GenericParameters.Count;
+            il.Emit(OpCodes.Ldc_I4, genericParameterCount);
+            il.Emit(OpCodes.Newarr, systemType);
+            il.Emit(OpCodes.Stloc, _typeArguments);
+            il.PushGenericArguments(targetMethod, module, _typeArguments);
+        }
+
+        private void SaveParameterTypes(ILProcessor il, MethodReference targetMethod, ModuleDefinition module,
+            TypeReference systemType)
+        {
+            // Save the parameter types
+            var parameterCount = targetMethod.Parameters.Count;
+            il.Emit(OpCodes.Ldc_I4, parameterCount);
+            il.Emit(OpCodes.Newarr, systemType);
+            il.Emit(OpCodes.Stloc, _parameterTypes);
+
+            il.SaveParameterTypes(targetMethod, module, _parameterTypes);
+        }
+
+        private void PushThisPointer(ILProcessor il, MethodReference targetMethod)
+        {
+            // Static methods will always have a null reference as the target
+            if (!targetMethod.HasThis)
+                il.Emit(OpCodes.Ldnull);
+
+            // Box the target, if necessary
+            TypeReference declaringType = targetMethod.GetDeclaringType();
+            if (targetMethod.HasThis && (declaringType.IsValueType || declaringType is GenericParameter))
+                il.Emit(OpCodes.Box, declaringType);
+        }
+
+        private void SaveMethodCallArguments(ILProcessor il, MethodReference targetMethod)
         {
             // If the target method is an instance method, then the remaining item on the stack
             // will be the target object instance
@@ -350,52 +451,6 @@ namespace Deflector
 
                 il.Emit(OpCodes.Callvirt, _pushMethod);
             }
-
-            // Static methods will always have a null reference as the target
-            if (!targetMethod.HasThis)
-                il.Emit(OpCodes.Ldnull);
-
-            // Box the target, if necessary
-            TypeReference declaringType = targetMethod.GetDeclaringType();
-            if (targetMethod.HasThis && (declaringType.IsValueType || declaringType is GenericParameter))
-                il.Emit(OpCodes.Box, declaringType);
-
-
-            if (targetMethod.HasThis)
-            {
-                il.Emit(OpCodes.Stloc, _target);
-                il.Emit(OpCodes.Ldloc, _target);
-            }
-
-            // Push the current method
-            il.PushMethod(targetMethod, module);
-            il.PushStackTrace(module);
-
-            var systemType = module.Import(typeof(Type));
-
-            // Save the parameter types
-            var parameterCount = targetMethod.Parameters.Count;
-            il.Emit(OpCodes.Ldc_I4, parameterCount);
-            il.Emit(OpCodes.Newarr, systemType);
-            il.Emit(OpCodes.Stloc, _parameterTypes);
-
-            il.SaveParameterTypes(targetMethod, module, _parameterTypes);
-            il.Emit(OpCodes.Ldloc, _parameterTypes);
-
-            // Save the type arguments
-            var genericParameterCount = targetMethod.GenericParameters.Count;
-            il.Emit(OpCodes.Ldc_I4, genericParameterCount);
-            il.Emit(OpCodes.Newarr, systemType);
-            il.Emit(OpCodes.Stloc, _typeArguments);
-            il.PushGenericArguments(targetMethod, module, _typeArguments);
-            il.Emit(OpCodes.Ldloc, _typeArguments);
-
-            // Save the method arguments
-            il.Emit(OpCodes.Ldloc, _currentArguments);
-            il.Emit(OpCodes.Callvirt, _toArray);
-
-            il.Emit(OpCodes.Newobj, _invocationInfoCtor);
-            il.Emit(OpCodes.Stloc, _invocationInfo);
         }
     }
 }

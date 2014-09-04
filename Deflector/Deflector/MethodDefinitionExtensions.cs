@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace Deflector
 {
@@ -12,6 +13,27 @@ namespace Deflector
     /// </summary>
     public static class MethodDefinitionExtensions
     {
+        public static TypeReference GetReturnType(this MethodReference targetMethod)
+        {
+            var returnType = targetMethod.ReturnType;
+            var declaringType = targetMethod.DeclaringType;
+
+            var genericInstance = declaringType as GenericInstanceType;
+            var fullName = returnType.FullName ?? string.Empty;
+            if (genericInstance != null && fullName.StartsWith("!") &&
+                !string.IsNullOrEmpty(fullName))
+            {
+                var indexText = fullName.Where(char.IsDigit).ToArray();
+                var indexValue = int.Parse(new string(indexText));
+
+                var genericArgument = genericInstance.GenericArguments[indexValue];
+
+                var originalReturnType = returnType;
+                returnType = originalReturnType.IsArray ? genericArgument.MakeArrayType() : genericArgument;
+            }
+            return returnType;
+        }
+
         /// <summary>
         /// Returns the <see cref="ILProcessor"/> instance
         /// associated with the body of the <paramref name="method">target method</paramref>.

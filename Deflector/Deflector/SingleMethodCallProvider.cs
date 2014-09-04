@@ -18,7 +18,7 @@ namespace Deflector
             _implementation = implementation;
         }
 
-        public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, IDictionary<MethodBase, IMethodCall> methodCallMap,
+        public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, IMethodCallMap methodCallMap,
             StackTrace stackTrace)
         {
             // Map the implementation to the most compatible method signature
@@ -30,7 +30,7 @@ namespace Deflector
             if (!bestMatch.HasCompatibleMethodSignatureWith(_implementation.Method))
                 return;
 
-            methodCallMap[bestMatch] = new DelegateMethodCall(_implementation);
+            methodCallMap.Add(bestMatch, new DelegateMethodCall(_implementation));
         }
     }
 }
