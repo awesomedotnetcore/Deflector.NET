@@ -51,6 +51,49 @@ namespace Deflector.Tests
             Assert.AreEqual(1, callCount);
         }
 
+        [Test]
+        public void Should_intercept_property_getter()
+        {
+            var callCount = 0;
+
+            Func<int> getterMethod = () =>
+            {
+                callCount++;
+                return 42;
+            };
+
+            Replace.Property((SampleClassWithProperties c)=>c.Value).WithGetter(getterMethod);
+
+            var assemblyDefinition = RewriteAssemblyOf<SampleClassWithProperties>();
+            var assembly = assemblyDefinition.ToAssembly();
+            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassThatCallsAProperty");
+            
+            dynamic instance = Activator.CreateInstance(targetType);
+            instance.DoSomething();
+            Assert.AreEqual(1, callCount);
+        }
+
+        [Test]
+        public void Should_intercept_property_setter()
+        {
+            var callCount = 0;
+
+            Action<int> setterMethod = value =>
+            {
+                callCount++;
+            };
+
+            Replace.Property((SampleClassWithProperties c) => c.Value).WithSetter(setterMethod);
+
+            var assemblyDefinition = RewriteAssemblyOf<SampleClassWithProperties>();
+            var assembly = assemblyDefinition.ToAssembly();
+            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassThatCallsAProperty");
+
+            dynamic instance = Activator.CreateInstance(targetType);
+            instance.DoSomething();
+            Assert.AreEqual(1, callCount);
+        }
+
         private AssemblyDefinition RewriteAssemblyOf<T>()
         {
             var assemblyLocation = typeof(T).Assembly.Location;
