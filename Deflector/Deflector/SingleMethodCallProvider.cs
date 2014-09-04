@@ -21,10 +21,12 @@ namespace Deflector
         public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, IDictionary<MethodBase, IMethodCall> methodCallMap,
             StackTrace stackTrace)
         {
-            if (!interceptedMethods.Contains(_targetMethod))
+            // Map the implementation to the most compatible method signature
+            var bestMatch = interceptedMethods.GetBestMatch(_targetMethod);
+            if (bestMatch == null)
                 return;
 
-            methodCallMap[_targetMethod] = new DelegateMethodCall(_implementation);
+            methodCallMap[bestMatch] = new DelegateMethodCall(_implementation);
         }
     }
 }

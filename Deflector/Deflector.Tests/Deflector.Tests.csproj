@@ -32,9 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Deflector">
-      <HintPath>..\..\..\AOPBench\lib\Deflector\Deflector.dll</HintPath>
-    </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -70,6 +67,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Deflector\Deflector.csproj">
+      <Project>{41f6c644-cc4e-4beb-ba8e-7bd6450727ee}</Project>
+      <Name>Deflector</Name>
+    </ProjectReference>
     <ProjectReference Include="SampleLibrary\SampleLibrary.csproj">
       <Project>{dcccdef0-5071-4f35-a75c-d7cce6144937}</Project>
       <Name>SampleLibrary</Name>
