@@ -26,6 +26,10 @@ namespace Deflector
             if (bestMatch == null)
                 return;
 
+            // Verify the delegate signature
+            if (!bestMatch.HasCompatibleMethodSignatureWith(_implementation.Method))
+                return;
+
             methodCallMap[bestMatch] = new DelegateMethodCall(_implementation);
         }
     }

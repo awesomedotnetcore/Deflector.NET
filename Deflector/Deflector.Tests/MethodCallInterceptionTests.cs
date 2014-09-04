@@ -35,6 +35,27 @@ namespace Deflector.Tests
         }
 
         [Test]
+        public void Should_intercept_constructor_call()
+        {
+            var assemblyDefinition = RewriteAssemblyOf<SampleClassWithConstructorCall>();
+
+            var callCount = 0;
+            Func<List<int>> createList = () =>
+            {
+                callCount++;
+                return new List<int>();
+            };
+
+            Replace.ConstructorCallOn<List<int>>().With(createList);
+
+            var assembly = assemblyDefinition.ToAssembly();
+            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassWithConstructorCall");
+            dynamic instance = Activator.CreateInstance(targetType);
+            instance.DoSomething();
+            Assert.AreEqual(1, callCount);
+        }
+
+        [Test]
         public void Should_intercept_instance_method()
         {
             var assemblyDefinition = RewriteAssemblyOf<SampleClassThatCallsAnInstanceMethod>();

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace Deflector
 {
@@ -53,7 +54,6 @@ namespace Deflector
                 typeof(StackTrace),
                 typeof (Type[]),
                 typeof (Type[]),
-                typeof (Type),
                 typeof (object[])
             };
 
@@ -85,7 +85,7 @@ namespace Deflector
             var body = method.Body;
             body.InitLocals = true;
 
-            var oldInstructions = body.Instructions.ToArray();            
+            var oldInstructions = body.Instructions.ToArray();
 
             var callInstructions = oldInstructions.Where(instruction => instruction.OpCode == OpCodes.Call ||
                                                                         instruction.OpCode == OpCodes.Callvirt).ToArray();
@@ -103,12 +103,12 @@ namespace Deflector
                 var il = body.GetILProcessor();
                 var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference).ToArray();
                 var constructors =
-                    constructorCalls.Select(instruction => instruction.Operand as MethodReference).Where(c=>c.DeclaringType != objectType).ToArray();
+                    constructorCalls.Select(instruction => instruction.Operand as MethodReference).Where(c => c.DeclaringType != objectType).ToArray();
 
                 // Precalculate all method call interceptors            
 
                 var provider = method.AddLocal<IMethodCallProvider>();
-                var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));                
+                var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));
 
                 // Obtain the method call provider instance
                 il.Emit(OpCodes.Call, getProvider);
@@ -197,7 +197,7 @@ namespace Deflector
                 il.Append(oldInstruction);
                 return;
             }
-                
+
 
             // TODO: Call Dictionary<,>.ContainsKey to check if there is a replacement method call for the current method
             // Get the IMethodCall instance for the current constructor
@@ -263,7 +263,7 @@ namespace Deflector
                 il.Append(oldInstruction);
                 return;
             }
-                
+
             // Grab the method call instance
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(targetMethod, module);
@@ -280,7 +280,7 @@ namespace Deflector
 
 
             il.Emit(OpCodes.Stloc, _currentMethodCall);
-            
+
 
             il.Emit(OpCodes.Ldloc, _currentMethodCall);
             il.Emit(OpCodes.Brfalse, skipInterception);
@@ -288,9 +288,26 @@ namespace Deflector
             // if (currentMethodCall != null) {
 
             // var returnValue = currentMethodCall.Invoke(methodCallInvocationInfo);
-            var returnType = targetMethod.ReturnType;
-            SaveMethodCallInvocationInfo(il, targetMethod, module, returnType);
 
+            // Resolve the return type if the target method's declaring type is a generic type
+            var returnType = targetMethod.ReturnType;
+            var declaringType = targetMethod.DeclaringType;
+
+            var genericInstance = declaringType as GenericInstanceType;
+            var fullName = returnType.FullName ?? string.Empty;
+            if (genericInstance != null && fullName.StartsWith("!") &&
+                !string.IsNullOrEmpty(fullName))
+            {
+                var indexText = fullName.Where(char.IsDigit).ToArray();
+                var indexValue = int.Parse(new string(indexText));
+
+                var genericArgument = genericInstance.GenericArguments[indexValue];
+
+                var originalReturnType = returnType;
+                returnType = originalReturnType.IsArray ? genericArgument.MakeArrayType() : genericArgument;
+            }
+
+            SaveMethodCallInvocationInfo(il, targetMethod, module, returnType);
 
             il.Emit(OpCodes.Ldloc, _currentMethodCall);
             il.Emit(OpCodes.Ldloc, _invocationInfo);
@@ -300,9 +317,6 @@ namespace Deflector
 
 
             var skipMethodCall = il.Create(OpCodes.Nop);
-
-            if (returnType.FullName != "System.Void" && !returnType.IsValueType)
-                il.Emit(OpCodes.Ldnull);
 
             il.Emit(OpCodes.Br, skipMethodCall);
 
@@ -375,9 +389,6 @@ namespace Deflector
             il.Emit(OpCodes.Stloc, _typeArguments);
             il.PushGenericArguments(targetMethod, module, _typeArguments);
             il.Emit(OpCodes.Ldloc, _typeArguments);
-
-            // Push the return type
-            il.PushType(returnType, module);
 
             // Save the method arguments
             il.Emit(OpCodes.Ldloc, _currentArguments);

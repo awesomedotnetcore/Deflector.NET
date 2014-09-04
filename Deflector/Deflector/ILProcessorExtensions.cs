@@ -76,7 +76,7 @@ namespace Deflector
                 return;
             }
 
-            il.Emit(OpCodes.Unbox_Any, returnType);
+            il.Emit(OpCodes.Unbox_Any, module.Import(returnType));
         }
 
         /// <summary>

@@ -15,7 +15,6 @@ namespace Deflector
     {
         private readonly object[] _arguments;
         private readonly Type[] _parameterTypes;
-        private readonly Type _returnType;
         private readonly StackTrace _stackTrace;
         private readonly object _target;
         private readonly MethodBase _targetMethod;
@@ -33,11 +32,10 @@ namespace Deflector
         /// this will hold the generic type arguments used to construct the
         /// method.
         /// </param>
-        /// <param name="returnType">The return type of the target method.</param>
         /// <param name="arguments">The arguments used in the method call.</param>
         public InvocationInfo(object target, MethodBase targetMethod,
             StackTrace stackTrace, Type[] parameterTypes,
-            Type[] typeArguments, Type returnType, object[] arguments)
+            Type[] typeArguments, object[] arguments)
         {
             _target = target;
             _targetMethod = targetMethod;
@@ -45,7 +43,6 @@ namespace Deflector
             _parameterTypes = parameterTypes;
             _typeArguments = typeArguments;
             _arguments = arguments;
-            _returnType = returnType;
         }
 
         /// <summary>
@@ -86,14 +83,6 @@ namespace Deflector
         public StackTrace StackTrace
         {
             get { return _stackTrace; }
-        }
-
-        /// <summary>
-        /// The return type of the <see cref="TargetMethod"/>.
-        /// </summary>
-        public Type ReturnType
-        {
-            get { return _returnType; }
         }
 
         /// <summary>

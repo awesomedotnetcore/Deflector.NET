@@ -27,11 +27,6 @@ namespace Deflector
         MethodBase CallingMethod { get; }
 
         /// <summary>
-        /// The return type of the <see cref="TargetMethod"/>.
-        /// </summary>
-        Type ReturnType { get; }
-
-        /// <summary>
         /// The <see cref="StackTrace"/> associated
         /// with the method call when the call was made.
         /// </summary>

@@ -171,18 +171,6 @@ namespace Deflector
         public static VariableDefinition AddLocal<T>(this MethodDefinition methodDef, string variableName)
         {
             return methodDef.AddLocal(variableName, typeof(T));
-        }
-
-        /// <summary>
-        /// Pushes the method invocation info onto the call evaluation stack
-        /// </summary>
-        /// <param name="targetMethod">The host method that will call the intercepted method.</param>
-        /// <param name="interceptedMethod">The intercepted method.</param>
-        /// <param name="invocationInfo">The local variable definition that will store the invocation info.</param>
-        public static void PushInvocationInfo(this MethodDefinition targetMethod, MethodDefinition interceptedMethod, VariableDefinition invocationInfo)
-        {
-            var emitter = new InvocationInfoEmitter();
-            emitter.Emit(targetMethod, interceptedMethod, invocationInfo);
-        }
+        }        
     }
 }
