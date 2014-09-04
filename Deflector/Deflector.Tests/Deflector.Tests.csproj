@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="AssemblyVerificationTests.cs" />
     <Compile Include="BaseAssemblyVerificationTestFixture.cs" />
+    <Compile Include="MethodCallInterceptionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
