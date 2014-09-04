@@ -96,7 +96,7 @@ namespace Deflector
             if (targetMethod == null)
                 throw new InvalidOperationException(string.Format("The property '{0}' has no setter method.", propertyInfo.Name));
 
-            AddMethodCall(setterImplementation, targetMethod);
+            AddMethodCall(targetMethod, setterImplementation);
         }
 
         public static void WithGetter<T>(this Func<Tuple<PropertyInfo, T>> getPropertyData, Func<T> getterImplementation)
@@ -107,7 +107,7 @@ namespace Deflector
             if (targetMethod == null)
                 throw new InvalidOperationException(string.Format("The property '{0}' has no getter method.", propertyInfo.Name));
 
-            AddMethodCall(getterImplementation, targetMethod);
+            AddMethodCall(targetMethod, getterImplementation);
         }
 
         public static Func<MethodBase> Method<TObject>(Expression<Action<TObject>> expression)
@@ -222,10 +222,10 @@ namespace Deflector
         {
             var targetMethod = methodSelector();
 
-            AddMethodCall(implementation, targetMethod);
+            AddMethodCall(targetMethod, implementation);
         }
 
-        private static void AddMethodCall(MulticastDelegate implementation, MethodBase targetMethod)
+        private static void AddMethodCall(MethodBase targetMethod, MulticastDelegate implementation)
         {
             // Verify that the method and the implementation have compatible signatures
             var method = implementation.Method;
