@@ -25,6 +25,7 @@ namespace Deflector
         private VariableDefinition _currentMethod;
         private VariableDefinition _stackTrace;
         private VariableDefinition _currentArgsAsArray;
+        private VariableDefinition _hasExistingMap;
 
         private MethodReference _pushMethod;
         private MethodReference _toArray;
@@ -81,6 +82,7 @@ namespace Deflector
             _currentMethod = hostMethod.AddLocal<MethodBase>();
             _stackTrace = hostMethod.AddLocal<StackTrace>();
             _currentArgsAsArray = hostMethod.AddLocal<object[]>();
+            _hasExistingMap = hostMethod.AddLocal<bool>();
         }
 
         public void Rewrite(MethodDefinition method, ModuleDefinition module)
@@ -122,9 +124,15 @@ namespace Deflector
                 il.Emit(OpCodes.Call, getProvider);
 
                 il.Emit(OpCodes.Stloc, provider);
+                il.PushMethod(method, module);                
+                
+                var hasMap = module.ImportMethod("ContainsMapFor", typeof (MethodCallMapRegistry),
+                    BindingFlags.Public | BindingFlags.Static);
+                il.Emit(OpCodes.Call, hasMap);
+                il.Emit(OpCodes.Stloc,_hasExistingMap);
 
                 // Instantiate the map
-                var createMap = module.ImportMethod("CreateMap", typeof(MethodCallMapRegistry),
+                var createMap = module.ImportMethod("GetMap", typeof(MethodCallMapRegistry),
                     BindingFlags.Public | BindingFlags.Static);
 
                 il.PushMethod(method, module);
@@ -135,6 +143,10 @@ namespace Deflector
 
                 il.Emit(OpCodes.Ldloc, _callMap);
                 il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
+
+                // Skip the map construction if there's already an existing map
+                il.Emit(OpCodes.Ldloc, _hasExistingMap);
+                il.Emit(OpCodes.Brtrue, skipCallMapConstruction);
 
                 il.Emit(OpCodes.Ldloc, provider);
                 il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
