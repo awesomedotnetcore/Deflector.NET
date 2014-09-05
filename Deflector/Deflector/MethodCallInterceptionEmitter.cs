@@ -127,6 +127,7 @@ namespace Deflector
                 var createMap = module.ImportMethod("CreateMap", typeof(MethodCallMapRegistry),
                     BindingFlags.Public | BindingFlags.Static);
 
+                il.PushMethod(method, module);
                 il.Emit(OpCodes.Call, createMap);
                 il.Emit(OpCodes.Stloc, _callMap);
 

@@ -9,7 +9,7 @@ namespace Deflector
 {
     public static class MethodCallMapRegistry
     {
-        public static IMethodCallMap CreateMap()
+        public static IMethodCallMap CreateMap(MethodBase method)
         {
             return new MethodCallMap();
         }
