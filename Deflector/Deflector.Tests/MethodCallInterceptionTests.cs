@@ -28,7 +28,7 @@ namespace Deflector.Tests
             var assembly = assemblyDefinition.ToAssembly();
             var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassWithInstanceMethod");
 
-            var targetMethod = targetType.GetMethods().First(m=>m.IsStatic && m.Name == "DoSomething");
+            var targetMethod = targetType.GetMethods().First(m => m.IsStatic && m.Name == "DoSomething");
             targetMethod.Invoke(null, new object[0]);
 
             Assert.AreEqual(1, callCount);
@@ -48,11 +48,8 @@ namespace Deflector.Tests
 
             Replace.ConstructorCallOn<List<int>>().With(createList);
 
-            var assembly = assemblyDefinition.ToAssembly();
-            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassWithConstructorCall");
-            dynamic instance = Activator.CreateInstance(targetType);
-            instance.DoSomething();
-            Assert.AreEqual(1, callCount);
+            var typeName = "SampleClassWithConstructorCall";
+            TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
         [Test]
@@ -65,11 +62,8 @@ namespace Deflector.Tests
 
             Replace.Method((SampleClassThatCallsAnInstanceMethod c) => c.DoSomethingElse()).With(callCounter);
 
-            var assembly = assemblyDefinition.ToAssembly();
-            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassThatCallsAnInstanceMethod");
-            dynamic instance = Activator.CreateInstance(targetType);
-            instance.DoSomething();
-            Assert.AreEqual(1, callCount);
+            var typeName = "SampleClassThatCallsAnInstanceMethod";
+            TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
         [Test]
@@ -83,15 +77,11 @@ namespace Deflector.Tests
                 return 42;
             };
 
-            Replace.Property((SampleClassWithProperties c)=>c.Value).WithGetter(getterMethod);
+            Replace.Property((SampleClassWithProperties c) => c.Value).WithGetter(getterMethod);
 
+            var typeName = "SampleClassThatCallsAProperty";
             var assemblyDefinition = RewriteAssemblyOf<SampleClassWithProperties>();
-            var assembly = assemblyDefinition.ToAssembly();
-            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassThatCallsAProperty");
-            
-            dynamic instance = Activator.CreateInstance(targetType);
-            instance.DoSomething();
-            Assert.AreEqual(1, callCount);
+            TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
         [Test]
@@ -107,12 +97,8 @@ namespace Deflector.Tests
             Replace.Property((SampleClassWithProperties c) => c.Value).WithSetter(setterMethod);
 
             var assemblyDefinition = RewriteAssemblyOf<SampleClassWithProperties>();
-            var assembly = assemblyDefinition.ToAssembly();
-            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassThatCallsAProperty");
-
-            dynamic instance = Activator.CreateInstance(targetType);
-            instance.DoSomething();
-            Assert.AreEqual(1, callCount);
+            var typeName = "SampleClassThatCallsAProperty";
+            TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
         private AssemblyDefinition RewriteAssemblyOf<T>()
@@ -123,6 +109,15 @@ namespace Deflector.Tests
             emitter.Rewrite(assemblyDefinition);
 
             return assemblyDefinition;
+        }
+
+        private static void TestModifiedType(AssemblyDefinition assemblyDefinition, string typeName, ref int callCount)
+        {
+            var assembly = assemblyDefinition.ToAssembly();
+            var targetType = assembly.GetTypes().First(t => t.Name == typeName);
+            dynamic instance = Activator.CreateInstance(targetType);
+            instance.DoSomething();
+            Assert.AreEqual(1, callCount);
         }
     }
 }

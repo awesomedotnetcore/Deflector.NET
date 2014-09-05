@@ -144,7 +144,7 @@ namespace Deflector
                 il.Emit(OpCodes.Ldloc, _callMap);
                 il.Emit(OpCodes.Brfalse, skipCallMapConstruction);
 
-                // Skip the map construction if there's already an existing map
+                // Reuse the existing map if possible
                 il.Emit(OpCodes.Ldloc, _hasExistingMap);
                 il.Emit(OpCodes.Brtrue, skipCallMapConstruction);
 
