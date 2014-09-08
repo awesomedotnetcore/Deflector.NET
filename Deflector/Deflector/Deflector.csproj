@@ -71,7 +71,6 @@
     <Compile Include="IMethodCallMap.cs" />
     <Compile Include="IMethodCallProvider.cs" />
     <Compile Include="InvocationInfo.cs" />
-    <Compile Include="MethodBag.cs" />
     <Compile Include="MethodBodyRewriterExtensions.cs" />
     <Compile Include="MethodCallInterceptionEmitter.cs" />
     <Compile Include="MethodCallMap.cs" />

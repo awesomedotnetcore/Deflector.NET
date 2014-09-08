@@ -11,6 +11,11 @@ namespace Deflector
     public interface IInvocationInfo
     {
         /// <summary>
+        /// The thread ID of the thread that created the invocation info object.
+        /// </summary>
+        int ManagedThreadId { get; }
+
+        /// <summary>
         /// The target instance currently being called.
         /// </summary>
         /// <remarks>This typically is a reference to a proxy object.</remarks>

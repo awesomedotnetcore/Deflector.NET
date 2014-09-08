@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 
 namespace Deflector
 {
@@ -43,6 +44,7 @@ namespace Deflector
             _parameterTypes = parameterTypes;
             _typeArguments = typeArguments;
             _arguments = arguments;
+            ManagedThreadId = Thread.CurrentThread.ManagedThreadId;
         }
 
         /// <summary>
@@ -58,6 +60,12 @@ namespace Deflector
             }
         }
 
+
+        public int ManagedThreadId
+        {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// The target instance currently being called.
