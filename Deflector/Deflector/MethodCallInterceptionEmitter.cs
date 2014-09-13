@@ -26,6 +26,7 @@ namespace Deflector
         private VariableDefinition _stackTrace;
         private VariableDefinition _currentArgsAsArray;
         private VariableDefinition _hasExistingMap;
+        private VariableDefinition _callingMethod;
 
         private MethodReference _pushMethod;
         private MethodReference _toArray;
@@ -56,6 +57,7 @@ namespace Deflector
             {
                 typeof (object),
                 typeof (MethodBase),
+                typeof (MethodBase),
                 typeof(StackTrace),
                 typeof (Type[]),
                 typeof (Type[]),
@@ -83,6 +85,7 @@ namespace Deflector
             _stackTrace = hostMethod.AddLocal<StackTrace>();
             _currentArgsAsArray = hostMethod.AddLocal<object[]>();
             _hasExistingMap = hostMethod.AddLocal<bool>();
+            _callingMethod = hostMethod.AddLocal<MethodBase>();
         }
 
         public void Rewrite(MethodDefinition method, ModuleDefinition module)
@@ -115,8 +118,11 @@ namespace Deflector
                 var constructors =
                     constructorCalls.Select(instruction => instruction.Operand as MethodReference).Where(c => c.DeclaringType != objectType).ToArray();
 
-                // Precalculate all method call interceptors            
+                // Save the calling method
+                il.PushMethod(method, module);
+                il.Emit(OpCodes.Stloc,_callingMethod);
 
+                // Precalculate all method call interceptors            
                 var provider = method.AddLocal<IMethodCallProvider>();
                 var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));
 
@@ -124,12 +130,12 @@ namespace Deflector
                 il.Emit(OpCodes.Call, getProvider);
 
                 il.Emit(OpCodes.Stloc, provider);
-                il.PushMethod(method, module);                
-                
-                var hasMap = module.ImportMethod("ContainsMapFor", typeof (MethodCallMapRegistry),
+                il.PushMethod(method, module);
+
+                var hasMap = module.ImportMethod("ContainsMapFor", typeof(MethodCallMapRegistry),
                     BindingFlags.Public | BindingFlags.Static);
                 il.Emit(OpCodes.Call, hasMap);
-                il.Emit(OpCodes.Stloc,_hasExistingMap);
+                il.Emit(OpCodes.Stloc, _hasExistingMap);
 
                 // Instantiate the map
                 var createMap = module.ImportMethod("GetMap", typeof(MethodCallMapRegistry),
@@ -296,11 +302,11 @@ namespace Deflector
                 return;
             }
 
-            AddMethodInterceptionHooks(oldInstruction, il, targetMethod, module);
+            AddMethodInterceptionHooks(oldInstruction, il, targetMethod, hostMethod, module);
             // }
         }
 
-        private void AddMethodInterceptionHooks(Instruction oldInstruction, ILProcessor il, MethodReference targetMethod,
+        private void AddMethodInterceptionHooks(Instruction oldInstruction, ILProcessor il, MethodReference targetMethod, MethodDefinition hostMethod,
             ModuleDefinition module)
         {
             // Grab the method call instance
@@ -313,7 +319,7 @@ namespace Deflector
             il.Emit(OpCodes.Brfalse, skipInterception);
 
 
-            EmitMethodCallInterception(il, targetMethod, module, skipInterception);
+            EmitMethodCallInterception(il, targetMethod, hostMethod, module, skipInterception);
 
             var skipMethodCall = il.Create(OpCodes.Nop);
 
@@ -328,7 +334,7 @@ namespace Deflector
             il.Append(skipMethodCall);
         }
 
-        private void EmitMethodCallInterception(ILProcessor il, MethodReference targetMethod, ModuleDefinition module,
+        private void EmitMethodCallInterception(ILProcessor il, MethodReference targetMethod, MethodDefinition callingMethod, ModuleDefinition module,
             Instruction skipInterception)
         {
             il.Emit(OpCodes.Ldloc, _callMap);
@@ -350,7 +356,7 @@ namespace Deflector
             // Resolve the return type if the target method's declaring type is a generic type
             var returnType = targetMethod.GetReturnType();
 
-            SaveMethodCallInvocationInfo(il, targetMethod, module, returnType);
+            SaveMethodCallInvocationInfo(il, targetMethod, callingMethod, module);
 
             il.Emit(OpCodes.Ldloc, _currentMethodCall);
             il.Emit(OpCodes.Ldloc, _invocationInfo);
@@ -359,12 +365,12 @@ namespace Deflector
             il.PackageReturnValue(module, returnType);
         }
 
-        private void SaveMethodCallInvocationInfo(ILProcessor il, MethodReference targetMethod, ModuleDefinition module,
-            TypeReference returnType)
+        private void SaveMethodCallInvocationInfo(ILProcessor il, MethodReference targetMethod, MethodDefinition callingMethod, ModuleDefinition module)
         {
             PushThisPointer(il, targetMethod);
 
             var systemType = module.Import(typeof(Type));
+
             // Push the current method
             SaveMethodCallArguments(il, targetMethod);
             SaveCurrentMethod(il, targetMethod, module);
@@ -378,6 +384,7 @@ namespace Deflector
 
         private void SaveCurrentInvocationInfo(ILProcessor il)
         {
+            il.Emit(OpCodes.Ldloc, _callingMethod);
             il.Emit(OpCodes.Ldloc, _currentMethod);
             il.Emit(OpCodes.Ldloc, _stackTrace);
             il.Emit(OpCodes.Ldloc, _parameterTypes);

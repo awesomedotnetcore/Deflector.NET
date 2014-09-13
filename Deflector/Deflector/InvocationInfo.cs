@@ -18,6 +18,7 @@ namespace Deflector
         private readonly Type[] _parameterTypes;
         private readonly StackTrace _stackTrace;
         private readonly object _target;
+        private readonly MethodBase _callingMethod;
         private readonly MethodBase _targetMethod;
         private readonly Type[] _typeArguments;
 
@@ -25,6 +26,7 @@ namespace Deflector
         /// Initializes the <see cref="InvocationInfo"/> instance.
         /// </summary>
         /// <param name="target">The target instance currently being called.</param>
+        /// <param name="callingMethod">The calling method.</param>
         /// <param name="targetMethod">The method currently being called.</param>
         /// <param name="stackTrace"> The <see cref="StackTrace"/> associated with the method call when the call was made.</param>
         /// <param name="parameterTypes">The parameter types for the current target method.</param>
@@ -34,11 +36,12 @@ namespace Deflector
         /// method.
         /// </param>
         /// <param name="arguments">The arguments used in the method call.</param>
-        public InvocationInfo(object target, MethodBase targetMethod,
+        public InvocationInfo(object target, MethodBase callingMethod, MethodBase targetMethod,
             StackTrace stackTrace, Type[] parameterTypes,
             Type[] typeArguments, object[] arguments)
         {
             _target = target;
+            _callingMethod = callingMethod;
             _targetMethod = targetMethod;
             _stackTrace = stackTrace;
             _parameterTypes = parameterTypes;
@@ -52,12 +55,7 @@ namespace Deflector
         /// </summary>
         public MethodBase CallingMethod
         {
-            get
-            {
-                var frame = _stackTrace.GetFrame(0);
-
-                return frame.GetMethod();
-            }
+            get { return _callingMethod; }
         }
 
 
