@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deflector.Tests", "Deflecto
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleLibrary", "Deflector.Tests\SampleLibrary\SampleLibrary.csproj", "{DCCCDEF0-5071-4F35-A75C-D7CCE6144937}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deflector.Console", "Deflector.Console\Deflector.Console.csproj", "{0D9188B3-DD9F-46AC-8CB8-B90555C79411}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{DCCCDEF0-5071-4F35-A75C-D7CCE6144937}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCCCDEF0-5071-4F35-A75C-D7CCE6144937}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DCCCDEF0-5071-4F35-A75C-D7CCE6144937}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D9188B3-DD9F-46AC-8CB8-B90555C79411}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D9188B3-DD9F-46AC-8CB8-B90555C79411}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D9188B3-DD9F-46AC-8CB8-B90555C79411}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D9188B3-DD9F-46AC-8CB8-B90555C79411}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

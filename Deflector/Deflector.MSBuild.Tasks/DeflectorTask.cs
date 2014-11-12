@@ -40,6 +40,7 @@ namespace Deflector.MSBuild.Tasks
                 Log.LogMessage(MessageImportance.Normal,
                     "{0}: Adding method call interception to assembly '{1}' (Output File: {2})", GetType().Name, targetFile,
                     outputFile);
+
                 var assembly = AssemblyDefinition.ReadAssembly(targetFile);
 
                 var emitter = new MethodCallInterceptionEmitter();
