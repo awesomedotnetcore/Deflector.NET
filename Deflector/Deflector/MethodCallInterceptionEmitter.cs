@@ -128,7 +128,6 @@ namespace Deflector
 
                 // Obtain the method call provider instance
                 il.Emit(OpCodes.Call, getProvider);
-
                 il.Emit(OpCodes.Stloc, provider);
                 il.PushMethod(method, module);
 
@@ -371,12 +370,13 @@ namespace Deflector
 
         private void SaveMethodCallInvocationInfo(ILProcessor il, MethodReference targetMethod, MethodDefinition callingMethod, ModuleDefinition module)
         {
-            PushThisPointer(il, targetMethod);
-
             var systemType = module.Import(typeof(Type));
 
             // Push the current method
             SaveMethodCallArguments(il, targetMethod);
+
+            PushThisPointer(il, targetMethod);
+
             SaveCurrentMethod(il, targetMethod, module);
             SaveStackTrace(il, module);
             SaveParameterTypes(il, targetMethod, module, systemType);

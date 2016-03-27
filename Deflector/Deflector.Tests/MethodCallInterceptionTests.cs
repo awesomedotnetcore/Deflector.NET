@@ -21,6 +21,9 @@ namespace Deflector.Tests
             Action<string> incrementCallCount = text =>
             {
                 callCount++;
+
+                // Match the parameters passed to the Console.WriteLine() call
+                Assert.AreEqual("Hello, World!", text);
             };
 
             Replace.Method(() => Console.WriteLine("")).With(incrementCallCount);
@@ -92,6 +95,9 @@ namespace Deflector.Tests
             Action<int> setterMethod = value =>
             {
                 callCount++;
+
+                // Match the setter value
+                Assert.AreEqual(42, value);
             };
 
             Replace.Property((SampleClassWithProperties c) => c.Value).WithSetter(setterMethod);
