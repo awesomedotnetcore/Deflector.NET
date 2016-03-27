@@ -238,12 +238,16 @@ namespace Deflector
 
 
             //AddMethodInterceptionHooks(oldInstruction, il, constructor, module);
+            var skipInterception = il.Create(OpCodes.Nop);
+
+            il.Emit(OpCodes.Ldloc, _callMap);
+            il.Emit(OpCodes.Brfalse, skipInterception);
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(constructor, module);
             il.Emit(OpCodes.Callvirt, _containsKey);
             il.Emit(OpCodes.Stloc, _hasMethodCall);
 
-            var skipInterception = il.Create(OpCodes.Nop);
+            
             var endLabel = il.Create(OpCodes.Nop);
             il.Emit(OpCodes.Ldloc, _hasMethodCall);
             il.Emit(OpCodes.Brfalse, skipInterception);

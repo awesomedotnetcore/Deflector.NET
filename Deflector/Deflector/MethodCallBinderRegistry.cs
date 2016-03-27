@@ -7,31 +7,24 @@ namespace Deflector
 {
     public static class MethodCallBinderRegistry
     {
-        private static readonly List<IMethodCallBinder> _providers = new List<IMethodCallBinder>();
-        private static readonly object _lock = new object();
+        private static readonly ConcurrentQueue<IMethodCallBinder> _providers = new ConcurrentQueue<IMethodCallBinder>();
 
         public static void AddProvider(IMethodCallBinder methodCallBinder)
         {
-            lock (_lock)
-            {
-                _providers.Add(methodCallBinder);    
-            }            
+            _providers.Enqueue(methodCallBinder);
         }
 
         public static void Clear()
         {
-            lock (_lock)
+            while (!_providers.IsEmpty)
             {
-                _providers.Clear();
+                IMethodCallBinder result;
+                _providers.TryDequeue(out result);
             }
         }
         public static IMethodCallBinder GetProvider()
         {
-            lock (_lock)
-            {
-                return new CompositeMethodCallBinder(_providers);
-            }
+            return new CompositeMethodCallBinder(_providers);
         }
-
     }
 }
