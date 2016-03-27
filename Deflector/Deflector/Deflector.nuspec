@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<package >
+
+<package>
   <metadata>
     <id>$id$</id>
     <version>$version$</version>
@@ -10,11 +11,11 @@
     <projectUrl>https://github.com/philiplaureano/Deflector.NET</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <copyright>Copyright 2014 Philip Laureano</copyright>
+    <copyright>Copyright 2016 Philip Laureano</copyright>
     <tags>mocking ilasm rewriting aop</tags>
     <dependencies>
       <dependency id="LinFu.Finders" version="1.0.1" />
-      <dependency id="Mono.Cecil" version="0.9.5.4" />
+      <dependency id="Mono.Cecil" version="0.9.6.1" />
     </dependencies>
   </metadata>
 </package>

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace Deflector
 {
@@ -12,7 +9,7 @@ namespace Deflector
         private readonly IEnumerable<IMethodCallBinder> _methodCallProviders;
 
         public CompositeMethodCallBinder(params IMethodCallBinder[] methodCallBinders)
-            : this((IEnumerable<IMethodCallBinder>)methodCallBinders)
+            : this((IEnumerable<IMethodCallBinder>) methodCallBinders)
         {
         }
 
@@ -21,7 +18,8 @@ namespace Deflector
             _methodCallProviders = methodCallProviders;
         }
 
-        public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, IMethodCallMap methodCallMap,
+        public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods,
+            IMethodCallMap methodCallMap,
             StackTrace stackTrace)
         {
             foreach (var provider in _methodCallProviders)

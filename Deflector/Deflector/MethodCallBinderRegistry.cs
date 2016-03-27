@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Concurrent;
 
 namespace Deflector
 {
@@ -22,6 +19,7 @@ namespace Deflector
                 _providers.TryDequeue(out result);
             }
         }
+
         public static IMethodCallBinder GetProvider()
         {
             return new CompositeMethodCallBinder(_providers);

@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace Deflector
 {
     public class MethodCallMap : IMethodCallMap
     {
-        private ConcurrentDictionary<Func<MethodBase, bool>, IMethodCall> _callMap =
+        private readonly ConcurrentDictionary<Func<MethodBase, bool>, IMethodCall> _callMap =
             new ConcurrentDictionary<Func<MethodBase, bool>, IMethodCall>();
+
         public bool ContainsMappingFor(MethodBase method)
         {
             var keys = _callMap.Keys;

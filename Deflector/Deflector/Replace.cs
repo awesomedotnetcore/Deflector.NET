@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 
 namespace Deflector
 {
@@ -14,53 +13,69 @@ namespace Deflector
             return () =>
             {
                 var constructors =
-                    typeof(T).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    typeof (T).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
                 return new KeyValuePair<IEnumerable<MethodBase>, T>(constructors, default(T));
             };
         }
 
-        public static void With<T1, T2, T3, T4, T5, T6, T7, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, T4, T5, T6, T7, TResult> implementation)
+        public static void With<T1, T2, T3, T4, T5, T6, T7, TResult>(
+            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<T1, T2, T3, T4, T5, T6, T7, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static void With<T1, T2, T3, T4, T5, T6, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, T4, T5, T6, TResult> implementation)
+        public static void With<T1, T2, T3, T4, T5, T6, TResult>(
+            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<T1, T2, T3, T4, T5, T6, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static void With<T1, T2, T3, T4, T5, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, T4, T5, TResult> implementation)
+        public static void With<T1, T2, T3, T4, T5, TResult>(
+            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<T1, T2, T3, T4, T5, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static void With<T1, T2, T3, T4, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, T4, TResult> implementation)
+        public static void With<T1, T2, T3, T4, TResult>(
+            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<T1, T2, T3, T4, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static void With<T1, T2, T3, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, T3, TResult> implementation)
+        public static void With<T1, T2, T3, TResult>(
+            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<T1, T2, T3, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static void With<T1, T2, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, T2, TResult> implementation)
+        public static void With<T1, T2, TResult>(
+            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<T1, T2, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static void With<T1, TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<T1, TResult> implementation)
+        public static void With<T1, TResult>(
+            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<T1, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static void With<TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData, Func<TResult> implementation)
+        public static void With<TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        private static void WithConstructorImpl<TResult>(Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+        private static void WithConstructorImpl<TResult>(
+            Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
             MulticastDelegate implementation)
         {
             var constructorData = getConstructorData();
@@ -68,10 +83,14 @@ namespace Deflector
             var implementationMethod = implementation.Method;
             var matchingConstructor = constructors.GetBestMatch(implementationMethod);
             if (matchingConstructor == null)
-                throw new InvalidOperationException(string.Format("Unable to find a compatible constructor from type '{0}' that matches the current implementation delegate.", typeof(TResult).FullName));
+                throw new InvalidOperationException(
+                    string.Format(
+                        "Unable to find a compatible constructor from type '{0}' that matches the current implementation delegate.",
+                        typeof (TResult).FullName));
 
             AddMethodCall(matchingConstructor, implementation);
         }
+
         public static Func<Tuple<PropertyInfo, T>> Property<TObject, T>(Expression<Func<TObject, T>> p)
         {
             return () =>
@@ -88,13 +107,15 @@ namespace Deflector
             getPropertyData.WithSetter(setterImplementation);
         }
 
-        public static void WithSetter<T>(this Func<Tuple<PropertyInfo, T>> getPropertyData, Action<T> setterImplementation)
+        public static void WithSetter<T>(this Func<Tuple<PropertyInfo, T>> getPropertyData,
+            Action<T> setterImplementation)
         {
             var metaData = getPropertyData();
             var propertyInfo = metaData.Item1;
             var targetMethod = propertyInfo.GetSetMethod();
             if (targetMethod == null)
-                throw new InvalidOperationException(string.Format("The property '{0}' has no setter method.", propertyInfo.Name));
+                throw new InvalidOperationException(string.Format("The property '{0}' has no setter method.",
+                    propertyInfo.Name));
 
             AddMethodCall(targetMethod, setterImplementation);
         }
@@ -105,7 +126,8 @@ namespace Deflector
             var propertyInfo = metaData.Item1;
             var targetMethod = propertyInfo.GetGetMethod();
             if (targetMethod == null)
-                throw new InvalidOperationException(string.Format("The property '{0}' has no getter method.", propertyInfo.Name));
+                throw new InvalidOperationException(string.Format("The property '{0}' has no getter method.",
+                    propertyInfo.Name));
 
             AddMethodCall(targetMethod, getterImplementation);
         }
@@ -204,7 +226,9 @@ namespace Deflector
         {
             methodSelector.WithDelegate(implementation);
         }
-        public static void With<T1, T2, TResult>(this Func<MethodBase> methodSelector, Func<T1, T2, TResult> implementation)
+
+        public static void With<T1, T2, TResult>(this Func<MethodBase> methodSelector,
+            Func<T1, T2, TResult> implementation)
         {
             methodSelector.WithDelegate(implementation);
         }
@@ -213,6 +237,7 @@ namespace Deflector
         {
             methodSelector.WithDelegate(implementation);
         }
+
         public static void With<TResult>(this Func<MethodBase> methodSelector, Func<TResult> implementation)
         {
             methodSelector.WithDelegate(implementation);
@@ -242,24 +267,24 @@ namespace Deflector
         private static MethodInfo GetMethodImpl(LambdaExpression expression)
         {
             var body = expression.Body;
-            var unaryExpression = (UnaryExpression)body;
-            var operand = (MethodCallExpression)unaryExpression.Operand;
+            var unaryExpression = (UnaryExpression) body;
+            var operand = (MethodCallExpression) unaryExpression.Operand;
             var methodCallExpression = operand;
 
             var arguments = methodCallExpression.Arguments;
-            var constantExpression = (ConstantExpression)arguments.Last();
+            var constantExpression = (ConstantExpression) arguments.Last();
 
-            return (MethodInfo)constantExpression.Value;
+            return (MethodInfo) constantExpression.Value;
         }
 
         private static MethodInfo GetMethodByCall(LambdaExpression expression)
         {
-            return ((MethodCallExpression)expression.Body).Method;
+            return ((MethodCallExpression) expression.Body).Method;
         }
 
         private static PropertyInfo GetPropertyImpl(LambdaExpression p)
         {
-            return (PropertyInfo)((MemberExpression)(p.Body)).Member;
+            return (PropertyInfo) ((MemberExpression) p.Body).Member;
         }
     }
 }

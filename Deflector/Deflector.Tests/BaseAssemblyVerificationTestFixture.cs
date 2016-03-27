@@ -4,7 +4,6 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using NUnit.Framework;
 
 namespace Deflector.Tests
@@ -57,7 +56,7 @@ namespace Deflector.Tests
             var pathKeys = new[]
             {
                 "sdkDir",
-                "x86SdkDir",
+                "x86SdkDir"
             };
 
             var process = new Process();

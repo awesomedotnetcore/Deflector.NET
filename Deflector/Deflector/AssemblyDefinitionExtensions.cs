@@ -7,11 +7,12 @@ namespace Deflector
     public static class AssemblyDefinitionExtensions
     {
         /// <summary>
-        /// Converts an <see cref="AssemblyDefinition"/>
-        /// into a running <see cref="Assembly"/>.
+        ///     Converts an <see cref="AssemblyDefinition" />
+        ///     into a running <see cref="Assembly" />.
         /// </summary>
-        /// <param name="definition">The <see cref="AssemblyDefinition"/> to convert.</param>
-        /// <returns>An <see cref="Assembly"/> that represents the <see cref="AssemblyDefinition"/> instance.
+        /// <param name="definition">The <see cref="AssemblyDefinition" /> to convert.</param>
+        /// <returns>
+        ///     An <see cref="Assembly" /> that represents the <see cref="AssemblyDefinition" /> instance.
         /// </returns>
         public static Assembly ToAssembly(this AssemblyDefinition definition)
         {

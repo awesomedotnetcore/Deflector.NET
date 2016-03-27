@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
 using CommandLine;
 using Mono.Cecil;
@@ -13,7 +10,10 @@ namespace Deflector.Console
         [Option('i', "input", Required = true, HelpText = "The input assembly that will be modified.")]
         public string InputFile { get; set; }
 
-        [Option('o', "output", Required = false, HelpText = "The path of the resulting output assembly. The default output assembly file name will be the same input assembly if this option is not specified.")]
+        [Option('o', "output", Required = false,
+            HelpText =
+                "The path of the resulting output assembly. The default output assembly file name will be the same input assembly if this option is not specified."
+            )]
         public string OutputFile { get; set; }
 
         [Option('v', null, HelpText = "Determines whether or not the output should be verbose.")]
@@ -31,12 +31,12 @@ namespace Deflector.Console
         }
     }
 
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var options = new CommandLineOptions();
-            if (!Parser.Default.ParseArguments(args, options)) 
+            if (!Parser.Default.ParseArguments(args, options))
                 return;
 
             var targetFile = options.InputFile;
@@ -51,7 +51,7 @@ namespace Deflector.Console
 
             // Save the results
             var outputFile = options.OutputFile ?? targetFile;
-            var parameters = new WriterParameters() { WriteSymbols = true };
+            var parameters = new WriterParameters {WriteSymbols = true};
             assembly.Write(outputFile, parameters);
         }
     }

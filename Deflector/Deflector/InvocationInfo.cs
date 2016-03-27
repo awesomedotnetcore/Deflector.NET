@@ -8,129 +8,96 @@ using System.Threading;
 namespace Deflector
 {
     /// <summary>
-    /// Represents the information associated with 
-    /// a single method call.
+    ///     Represents the information associated with
+    ///     a single method call.
     /// </summary>
     [Serializable]
     public class InvocationInfo : IInvocationInfo
     {
-        private readonly object[] _arguments;
-        private readonly Type[] _parameterTypes;
-        private readonly StackTrace _stackTrace;
-        private readonly object _target;
-        private readonly MethodBase _callingMethod;
-        private readonly MethodBase _targetMethod;
-        private readonly Type[] _typeArguments;
-
         /// <summary>
-        /// Initializes the <see cref="InvocationInfo"/> instance.
+        ///     Initializes the <see cref="InvocationInfo" /> instance.
         /// </summary>
         /// <param name="target">The target instance currently being called.</param>
         /// <param name="callingMethod">The calling method.</param>
         /// <param name="targetMethod">The method currently being called.</param>
-        /// <param name="stackTrace"> The <see cref="StackTrace"/> associated with the method call when the call was made.</param>
+        /// <param name="stackTrace"> The <see cref="StackTrace" /> associated with the method call when the call was made.</param>
         /// <param name="parameterTypes">The parameter types for the current target method.</param>
         /// <param name="typeArguments">
-        /// If the <see cref="TargetMethod"/> method is a generic method, 
-        /// this will hold the generic type arguments used to construct the
-        /// method.
+        ///     If the <see cref="TargetMethod" /> method is a generic method,
+        ///     this will hold the generic type arguments used to construct the
+        ///     method.
         /// </param>
         /// <param name="arguments">The arguments used in the method call.</param>
         public InvocationInfo(object target, MethodBase callingMethod, MethodBase targetMethod,
             StackTrace stackTrace, Type[] parameterTypes,
             Type[] typeArguments, object[] arguments)
         {
-            _target = target;
-            _callingMethod = callingMethod;
-            _targetMethod = targetMethod;
-            _stackTrace = stackTrace;
-            _parameterTypes = parameterTypes;
-            _typeArguments = typeArguments;
-            _arguments = arguments;
+            Target = target;
+            CallingMethod = callingMethod;
+            TargetMethod = targetMethod;
+            StackTrace = stackTrace;
+            ParameterTypes = parameterTypes;
+            TypeArguments = typeArguments;
+            Arguments = arguments;
             ManagedThreadId = Thread.CurrentThread.ManagedThreadId;
         }
 
         /// <summary>
-        /// This is the actual calling method that invoked the <see cref="TargetMethod"/>.
+        ///     This is the actual calling method that invoked the <see cref="TargetMethod" />.
         /// </summary>
-        public MethodBase CallingMethod
-        {
-            get { return _callingMethod; }
-        }
+        public MethodBase CallingMethod { get; }
 
 
-        public int ManagedThreadId
-        {
-            get;
-            private set;
-        }
+        public int ManagedThreadId { get; }
 
         /// <summary>
-        /// The target instance currently being called.
+        ///     The target instance currently being called.
         /// </summary>
         /// <remarks>This typically is a reference to a proxy object.</remarks>
-        public object Target
-        {
-            get { return _target; }
-        }
+        public object Target { get; }
 
         /// <summary>
-        /// The method currently being called.
+        ///     The method currently being called.
         /// </summary>
-        public MethodBase TargetMethod
-        {
-            get { return _targetMethod; }
-        }
+        public MethodBase TargetMethod { get; }
 
         /// <summary>
-        /// The <see cref="StackTrace"/> associated
-        /// with the method call when the call was made.
+        ///     The <see cref="StackTrace" /> associated
+        ///     with the method call when the call was made.
         /// </summary>
-        public StackTrace StackTrace
-        {
-            get { return _stackTrace; }
-        }
+        public StackTrace StackTrace { get; }
 
         /// <summary>
-        /// The parameter types for the current target method.
+        ///     The parameter types for the current target method.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// This could be very useful in cases where the actual target method
-        /// is based on a generic type definition. In such cases, 
-        /// the <see cref="IInvocationInfo"/> instance needs to be able
-        /// to describe the actual parameter types being used by the
-        /// current generic type instantiation. This property helps
-        /// users determine which parameter types are actually being used
-        /// at the time of the method call.
-        /// </para>
+        ///     <para>
+        ///         This could be very useful in cases where the actual target method
+        ///         is based on a generic type definition. In such cases,
+        ///         the <see cref="IInvocationInfo" /> instance needs to be able
+        ///         to describe the actual parameter types being used by the
+        ///         current generic type instantiation. This property helps
+        ///         users determine which parameter types are actually being used
+        ///         at the time of the method call.
+        ///     </para>
         /// </remarks>
-        public Type[] ParameterTypes
-        {
-            get { return _parameterTypes; }
-        }
+        public Type[] ParameterTypes { get; }
 
         /// <summary>
-        /// If the <see cref="TargetMethod"/> method is a generic method, 
-        /// this will hold the generic type arguments used to construct the
-        /// method.
+        ///     If the <see cref="TargetMethod" /> method is a generic method,
+        ///     this will hold the generic type arguments used to construct the
+        ///     method.
         /// </summary>
-        public Type[] TypeArguments
-        {
-            get { return _typeArguments; }
-        }
+        public Type[] TypeArguments { get; }
 
         /// <summary>
-        /// The arguments used in the method call.
+        ///     The arguments used in the method call.
         /// </summary>
-        public object[] Arguments
-        {
-            get { return _arguments; }
-        }
+        public object[] Arguments { get; }
 
 
         /// <summary>
-        /// Returns a string that represents the current object.
+        ///     Returns a string that represents the current object.
         /// </summary>
         /// <returns>A string that represents the current object.</returns>
         public override string ToString()

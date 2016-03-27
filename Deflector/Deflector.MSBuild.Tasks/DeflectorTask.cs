@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
@@ -17,7 +12,7 @@ namespace Deflector.MSBuild.Tasks
 
         public override bool Execute()
         {
-            bool result = false;
+            var result = false;
 
             foreach (var item in TargetFiles)
             {
@@ -26,7 +21,7 @@ namespace Deflector.MSBuild.Tasks
                 if (!result)
                     return false;
             }
-            
+
 
             return result;
         }
@@ -38,7 +33,8 @@ namespace Deflector.MSBuild.Tasks
             try
             {
                 Log.LogMessage(MessageImportance.Normal,
-                    "{0}: Adding method call interception to assembly '{1}' (Output File: {2})", GetType().Name, targetFile,
+                    "{0}: Adding method call interception to assembly '{1}' (Output File: {2})", GetType().Name,
+                    targetFile,
                     outputFile);
 
                 var assembly = AssemblyDefinition.ReadAssembly(targetFile);
@@ -46,7 +42,7 @@ namespace Deflector.MSBuild.Tasks
                 var emitter = new MethodCallInterceptionEmitter();
                 emitter.Rewrite(assembly);
 
-                var parameters = new WriterParameters() {WriteSymbols = true};
+                var parameters = new WriterParameters {WriteSymbols = true};
                 assembly.Write(outputFile, parameters);
 
                 result = true;

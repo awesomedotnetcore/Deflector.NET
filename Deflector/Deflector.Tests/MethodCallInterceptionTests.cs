@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using Mono.Cecil;
 using NUnit.Framework;
 using SampleLibrary;
@@ -12,28 +10,22 @@ namespace Deflector.Tests
     [TestFixture]
     public class MethodCallInterceptionTests : BaseAssemblyVerificationTestFixture
     {
-        [Test]
-        public void Should_intercept_static_method()
+        private AssemblyDefinition RewriteAssemblyOf<T>()
         {
-            var assemblyDefinition = RewriteAssemblyOf<SampleClassWithInstanceMethod>();
+            var assemblyLocation = typeof (T).Assembly.Location;
+            var assemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyLocation);
+            var emitter = new MethodCallInterceptionEmitter();
+            emitter.Rewrite(assemblyDefinition);
 
-            var callCount = 0;
-            Action<string> incrementCallCount = text =>
-            {
-                callCount++;
+            return assemblyDefinition;
+        }
 
-                // Match the parameters passed to the Console.WriteLine() call
-                Assert.AreEqual("Hello, World!", text);
-            };
-
-            Replace.Method(() => Console.WriteLine("")).With(incrementCallCount);
-
+        private static void TestModifiedType(AssemblyDefinition assemblyDefinition, string typeName, ref int callCount)
+        {
             var assembly = assemblyDefinition.ToAssembly();
-            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassWithInstanceMethod");
-
-            var targetMethod = targetType.GetMethods().First(m => m.IsStatic && m.Name == "DoSomething");
-            targetMethod.Invoke(null, new object[0]);
-
+            var targetType = assembly.GetTypes().First(t => t.Name == typeName);
+            dynamic instance = Activator.CreateInstance(targetType);
+            instance.DoSomething();
             Assert.AreEqual(1, callCount);
         }
 
@@ -107,22 +99,28 @@ namespace Deflector.Tests
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
-        private AssemblyDefinition RewriteAssemblyOf<T>()
+        [Test]
+        public void Should_intercept_static_method()
         {
-            var assemblyLocation = typeof(T).Assembly.Location;
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyLocation);
-            var emitter = new MethodCallInterceptionEmitter();
-            emitter.Rewrite(assemblyDefinition);
+            var assemblyDefinition = RewriteAssemblyOf<SampleClassWithInstanceMethod>();
 
-            return assemblyDefinition;
-        }
+            var callCount = 0;
+            Action<string> incrementCallCount = text =>
+            {
+                callCount++;
 
-        private static void TestModifiedType(AssemblyDefinition assemblyDefinition, string typeName, ref int callCount)
-        {
+                // Match the parameters passed to the Console.WriteLine() call
+                Assert.AreEqual("Hello, World!", text);
+            };
+
+            Replace.Method(() => Console.WriteLine("")).With(incrementCallCount);
+
             var assembly = assemblyDefinition.ToAssembly();
-            var targetType = assembly.GetTypes().First(t => t.Name == typeName);
-            dynamic instance = Activator.CreateInstance(targetType);
-            instance.DoSomething();
+            var targetType = assembly.GetTypes().First(t => t.Name == "SampleClassWithInstanceMethod");
+
+            var targetMethod = targetType.GetMethods().First(m => m.IsStatic && m.Name == "DoSomething");
+            targetMethod.Invoke(null, new object[0]);
+
             Assert.AreEqual(1, callCount);
         }
     }

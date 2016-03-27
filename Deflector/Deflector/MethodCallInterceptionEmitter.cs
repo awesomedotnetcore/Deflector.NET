@@ -1,44 +1,42 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 
 namespace Deflector
 {
     public class MethodCallInterceptionEmitter : IMethodBodyRewriter
     {
-        private VariableDefinition _invocationInfo;
+        private MethodReference _addMethodCalls;
+        private VariableDefinition _callingMethod;
+        private VariableDefinition _callMap;
+        private MethodReference _containsKey;
+        private VariableDefinition _currentArgsAsArray;
         private VariableDefinition _currentArgument;
         private VariableDefinition _currentArguments;
-        private VariableDefinition _target;
-        private VariableDefinition _parameterTypes;
-        private VariableDefinition _typeArguments;
-        private VariableDefinition _callMap;
-        private VariableDefinition _currentMethodCall;
-        private VariableDefinition _interceptedMethods;
-        private VariableDefinition _hasMethodCall;
         private VariableDefinition _currentMethod;
-        private VariableDefinition _stackTrace;
-        private VariableDefinition _currentArgsAsArray;
-        private VariableDefinition _hasExistingMap;
-        private VariableDefinition _callingMethod;
-
-        private MethodReference _pushMethod;
-        private MethodReference _toArray;
-        private MethodReference _invocationInfoCtor;
+        private VariableDefinition _currentMethodCall;
         private MethodReference _getMethodCall;
+        private VariableDefinition _hasExistingMap;
+        private VariableDefinition _hasMethodCall;
+        private VariableDefinition _interceptedMethods;
+        private VariableDefinition _invocationInfo;
+        private MethodReference _invocationInfoCtor;
         private MethodReference _invokeMethod;
-        private MethodReference _stackCtor;
         private MethodReference _markerAttributeCtor;
-        private MethodReference _addMethodCalls;
-        private MethodReference _containsKey;
 
         private TypeReference _markerAttributeType;
+        private VariableDefinition _parameterTypes;
+
+        private MethodReference _pushMethod;
+        private MethodReference _stackCtor;
+        private VariableDefinition _stackTrace;
+        private VariableDefinition _target;
+        private MethodReference _toArray;
+        private VariableDefinition _typeArguments;
 
         public void ImportReferences(ModuleDefinition module)
         {
@@ -48,8 +46,8 @@ namespace Deflector
             _containsKey = module.ImportMethod<IMethodCallMap>("ContainsMappingFor");
 
             _invokeMethod = module.ImportMethod<IMethodCall>("Invoke");
-            _stackCtor = module.ImportConstructor<Stack<object>>(new Type[0]);
-            _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>(new Type[0]);
+            _stackCtor = module.ImportConstructor<Stack<object>>();
+            _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>();
             _markerAttributeType = module.ImportType<MethodCallsAlreadyInterceptedAttribute>();
             _addMethodCalls = module.ImportMethod<IMethodCallBinder>("AddMethodCalls");
 
@@ -58,7 +56,7 @@ namespace Deflector
                 typeof (object),
                 typeof (MethodBase),
                 typeof (MethodBase),
-                typeof(StackTrace),
+                typeof (StackTrace),
                 typeof (Type[]),
                 typeof (Type[]),
                 typeof (object[])
@@ -101,7 +99,8 @@ namespace Deflector
             var oldInstructions = body.Instructions.ToArray();
 
             var callInstructions = oldInstructions.Where(instruction => instruction.OpCode == OpCodes.Call ||
-                                                                        instruction.OpCode == OpCodes.Callvirt).ToArray();
+                                                                        instruction.OpCode == OpCodes.Callvirt)
+                .ToArray();
 
             var constructorCalls = oldInstructions.Where(instruction => instruction.OpCode == OpCodes.Newobj).ToArray();
 
@@ -114,30 +113,33 @@ namespace Deflector
 
                 var objectType = module.ImportType<object>();
                 var il = body.GetILProcessor();
-                var targetMethods = callInstructions.Select(instruction => instruction.Operand as MethodReference).ToArray();
+                var targetMethods =
+                    callInstructions.Select(instruction => instruction.Operand as MethodReference).ToArray();
                 var constructors =
-                    constructorCalls.Select(instruction => instruction.Operand as MethodReference).Where(c => c.DeclaringType != objectType).ToArray();
+                    constructorCalls.Select(instruction => instruction.Operand as MethodReference)
+                        .Where(c => c.DeclaringType != objectType)
+                        .ToArray();
 
                 // Save the calling method
                 il.PushMethod(method, module);
-                il.Emit(OpCodes.Stloc,_callingMethod);
+                il.Emit(OpCodes.Stloc, _callingMethod);
 
                 // Precalculate all method call interceptors            
                 var provider = method.AddLocal<IMethodCallBinder>();
-                var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallBinderRegistry));
+                var getProvider = module.ImportMethod("GetProvider", typeof (MethodCallBinderRegistry));
 
                 // Obtain the method call provider instance
                 il.Emit(OpCodes.Call, getProvider);
                 il.Emit(OpCodes.Stloc, provider);
                 il.PushMethod(method, module);
 
-                var hasMap = module.ImportMethod("ContainsMapFor", typeof(MethodCallMapRegistry),
+                var hasMap = module.ImportMethod("ContainsMapFor", typeof (MethodCallMapRegistry),
                     BindingFlags.Public | BindingFlags.Static);
                 il.Emit(OpCodes.Call, hasMap);
                 il.Emit(OpCodes.Stloc, _hasExistingMap);
 
                 // Instantiate the map
-                var createMap = module.ImportMethod("GetMap", typeof(MethodCallMapRegistry),
+                var createMap = module.ImportMethod("GetMap", typeof (MethodCallMapRegistry),
                     BindingFlags.Public | BindingFlags.Static);
 
                 il.PushMethod(method, module);
@@ -223,7 +225,7 @@ namespace Deflector
         private void ReplaceConstructorCall(Instruction oldInstruction, MethodDefinition hostMethod,
             ILProcessor il)
         {
-            var constructor = (MethodReference)oldInstruction.Operand;
+            var constructor = (MethodReference) oldInstruction.Operand;
             var module = hostMethod.Module;
 
             // Skip the System.Object ctor call
@@ -246,7 +248,7 @@ namespace Deflector
             il.Emit(OpCodes.Callvirt, _containsKey);
             il.Emit(OpCodes.Stloc, _hasMethodCall);
 
-            
+
             var endLabel = il.Create(OpCodes.Nop);
             il.Emit(OpCodes.Ldloc, _hasMethodCall);
             il.Emit(OpCodes.Brfalse, skipInterception);
@@ -262,7 +264,7 @@ namespace Deflector
             il.Emit(OpCodes.Brfalse, skipInterception);
 
             SaveMethodCallArguments(il, constructor);
-            var systemType = module.Import(typeof(Type));
+            var systemType = module.Import(typeof (Type));
 
             // Note: There is no 'this' pointer when the constructor isn't called yet
             il.Emit(OpCodes.Ldnull);
@@ -295,7 +297,7 @@ namespace Deflector
                 return;
             }
 
-            var targetMethod = (MethodReference)oldInstruction.Operand;
+            var targetMethod = (MethodReference) oldInstruction.Operand;
             var module = hostMethod.Module;
 
             // Replacing constructor calls with the OpCodes.Call instruction is not supported
@@ -309,7 +311,8 @@ namespace Deflector
             // }
         }
 
-        private void AddMethodInterceptionHooks(Instruction oldInstruction, ILProcessor il, MethodReference targetMethod, MethodDefinition hostMethod,
+        private void AddMethodInterceptionHooks(Instruction oldInstruction, ILProcessor il, MethodReference targetMethod,
+            MethodDefinition hostMethod,
             ModuleDefinition module)
         {
             // Grab the method call instance
@@ -337,7 +340,8 @@ namespace Deflector
             il.Append(skipMethodCall);
         }
 
-        private void EmitMethodCallInterception(ILProcessor il, MethodReference targetMethod, MethodDefinition callingMethod, ModuleDefinition module,
+        private void EmitMethodCallInterception(ILProcessor il, MethodReference targetMethod,
+            MethodDefinition callingMethod, ModuleDefinition module,
             Instruction skipInterception)
         {
             il.Emit(OpCodes.Ldloc, _callMap);
@@ -368,9 +372,10 @@ namespace Deflector
             il.PackageReturnValue(module, returnType);
         }
 
-        private void SaveMethodCallInvocationInfo(ILProcessor il, MethodReference targetMethod, MethodDefinition callingMethod, ModuleDefinition module)
+        private void SaveMethodCallInvocationInfo(ILProcessor il, MethodReference targetMethod,
+            MethodDefinition callingMethod, ModuleDefinition module)
         {
-            var systemType = module.Import(typeof(Type));
+            var systemType = module.Import(typeof (Type));
 
             // Push the current method
             SaveMethodCallArguments(il, targetMethod);
@@ -448,7 +453,7 @@ namespace Deflector
                 il.Emit(OpCodes.Ldnull);
 
             // Box the target, if necessary
-            TypeReference declaringType = targetMethod.GetDeclaringType();
+            var declaringType = targetMethod.GetDeclaringType();
             if (targetMethod.HasThis && (declaringType.IsValueType || declaringType is GenericParameter))
                 il.Emit(OpCodes.Box, declaringType);
         }

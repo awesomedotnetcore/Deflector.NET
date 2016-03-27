@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Collections.Concurrent;
 using System.Reflection;
-using System.Text;
 
 namespace Deflector
 {
     public static class MethodCallMapRegistry
     {
-        private static readonly ConcurrentDictionary<MethodBase, IMethodCallMap> _entries = new ConcurrentDictionary<MethodBase, IMethodCallMap>();
+        private static readonly ConcurrentDictionary<MethodBase, IMethodCallMap> _entries =
+            new ConcurrentDictionary<MethodBase, IMethodCallMap>();
 
         public static IMethodCallMap GetMap(MethodBase method)
         {

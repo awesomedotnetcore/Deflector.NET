@@ -6,7 +6,8 @@ namespace Deflector
 {
     public static class MethodBodyRewriterExtensions
     {
-        public static void Rewrite(this IMethodBodyRewriter rewriter, AssemblyDefinition assembly, Func<MethodDefinition, bool> methodFilter = null)
+        public static void Rewrite(this IMethodBodyRewriter rewriter, AssemblyDefinition assembly,
+            Func<MethodDefinition, bool> methodFilter = null)
         {
             var mainModule = assembly.MainModule;
 

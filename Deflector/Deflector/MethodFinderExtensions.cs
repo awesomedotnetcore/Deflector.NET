@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using LinFu.Finders;
 using LinFu.Finders.Interfaces;
 
@@ -10,7 +9,8 @@ namespace Deflector
 {
     public static class MethodFinderExtensions
     {
-        public static TMethod GetBestMatch<TMethod>(this IEnumerable<TMethod> targetMethods, Type[] typeArguments, Type[] parameterTypes, Type returnType, string methodName)
+        public static TMethod GetBestMatch<TMethod>(this IEnumerable<TMethod> targetMethods, Type[] typeArguments,
+            Type[] parameterTypes, Type returnType, string methodName)
             where TMethod : MethodBase
         {
             var hasTypeArguments = typeArguments != null && typeArguments.Length > 0;
@@ -22,7 +22,7 @@ namespace Deflector
                     var currentMethod = method;
                     if (hasTypeArguments && method is MethodInfo)
                     {
-                        var methodInfo = (MethodInfo)method;
+                        var methodInfo = (MethodInfo) method;
                         currentMethod = methodInfo.MakeGenericMethod(typeArguments ?? new Type[0]);
                     }
 
@@ -42,11 +42,12 @@ namespace Deflector
             var candidateMethods = targetMethods.AsFuzzyList();
             var expectedArgumentCount = parameterTypes != null ? parameterTypes.Length : 0;
 
-            if (typeof(TMethod) != typeof(ConstructorInfo) && hasTypeArguments)
+            if (typeof (TMethod) != typeof (ConstructorInfo) && hasTypeArguments)
             {
                 // Match the type argument count, if necessary
                 candidateMethods.AddCriteria(m => m.IsGenericMethodDefinition &&
-                    m.GetGenericArguments().Length == typeArguments.Length, CriteriaType.Critical);
+                                                  m.GetGenericArguments().Length == typeArguments.Length,
+                    CriteriaType.Critical);
             }
 
             // Match the method name (optional)
@@ -78,7 +79,7 @@ namespace Deflector
                     return constructorInfo.DeclaringType;
                 }
 
-                var methodInfo = (MethodInfo)method;
+                var methodInfo = (MethodInfo) method;
                 return methodInfo.ReturnType;
             };
 
@@ -89,13 +90,14 @@ namespace Deflector
             MethodBase targetMethod = bestMatch != null ? bestMatch.Item : null;
 
             // Instantiate the generic method if necessary
-            if (typeof(TMethod) == typeof(MethodInfo) && hasTypeArguments && bestMatch != null && targetMethod is MethodInfo)
+            if (typeof (TMethod) == typeof (MethodInfo) && hasTypeArguments && bestMatch != null &&
+                targetMethod is MethodInfo)
             {
                 var targetMethodInfo = targetMethod as MethodInfo;
                 targetMethod = targetMethodInfo.MakeGenericMethod(typeArguments);
             }
 
-            return (TMethod)targetMethod;
+            return (TMethod) targetMethod;
         }
 
         public static MethodBase GetBestMatch(this IEnumerable<MethodBase> candidateMethods, MethodBase currentMethod)
@@ -118,13 +120,13 @@ namespace Deflector
                     parameterTypes, constructorInfo.DeclaringType, constructorInfo.Name);
             }
 
-            var methodInfo = (MethodInfo)currentMethod;
+            var methodInfo = (MethodInfo) currentMethod;
             return candidateMethods.GetBestMatch(typeArguments, parameterTypes, methodInfo.ReturnType, methodInfo.Name);
         }
 
         public static bool HasCompatibleMethodSignatureWith(this MethodBase method, MethodBase targetMethod)
         {
-            var candidates = new[] { method };
+            var candidates = new[] {method};
             var hasCompatibleMethodSignature = candidates.GetBestMatch(targetMethod) != null;
             return hasCompatibleMethodSignature;
         }

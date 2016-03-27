@@ -9,15 +9,15 @@ namespace Deflector
     public static class ILProcessorExtensions
     {
         /// <summary>
-        /// Pushes the stack trace of the currently executing method onto the stack.
+        ///     Pushes the stack trace of the currently executing method onto the stack.
         /// </summary>
-        /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
+        /// <param name="IL">The <see cref="ILProcessor" /> that will be used to create the instructions.</param>
         /// <param name="module">The module that contains the host method.</param>
         /// <param name="framesToSkip">The number of stack frames to skip.</param>
         public static void PushStackTrace(this ILProcessor IL, ModuleDefinition module, int framesToSkip = 0)
         {
             var stackTraceConstructor =
-                typeof(StackTrace).GetConstructor(new[] { typeof(int), typeof(bool) });
+                typeof (StackTrace).GetConstructor(new[] {typeof (int), typeof (bool)});
             var stackTraceCtor = module.Import(stackTraceConstructor);
 
             var addDebugSymbols = OpCodes.Ldc_I4_1;
@@ -27,8 +27,8 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Emits a Console.WriteLine call to using the current ILProcessor that will only be called if the contents
-        /// of the target variable are null at runtime.
+        ///     Emits a Console.WriteLine call to using the current ILProcessor that will only be called if the contents
+        ///     of the target variable are null at runtime.
         /// </summary>
         /// <param name="IL">The target ILProcessor.</param>
         /// <param name="text">The text that will be written to the console.</param>
@@ -43,7 +43,7 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Emits a Console.WriteLine call using the current ILProcessor.
+        ///     Emits a Console.WriteLine call using the current ILProcessor.
         /// </summary>
         /// <param name="IL">The target ILProcessor.</param>
         /// <param name="text">The text that will be written to the console.</param>
@@ -54,18 +54,18 @@ namespace Deflector
             var declaringType = method.DeclaringType;
             var module = declaringType.Module;
 
-            var writeLineMethod = typeof(Console).GetMethod("WriteLine",
+            var writeLineMethod = typeof (Console).GetMethod("WriteLine",
                 BindingFlags.Public | BindingFlags.Static, null,
-                new[] { typeof(string) }, null);
+                new[] {typeof (string)}, null);
             IL.Emit(OpCodes.Ldstr, text);
             IL.Emit(OpCodes.Call, module.Import(writeLineMethod));
         }
 
         /// <summary>
-        /// Converts the return value of a method into the <paramref name="returnType">target type</paramref>.
-        /// If the target type is void, then the value will simply be popped from the stack.
+        ///     Converts the return value of a method into the <paramref name="returnType">target type</paramref>.
+        ///     If the target type is void, then the value will simply be popped from the stack.
         /// </summary>
-        /// <param name="il">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
+        /// <param name="il">The <see cref="ILProcessor" /> that will be used to create the instructions.</param>
         /// <param name="module">The module that contains the host method.</param>
         /// <param name="returnType">The method return type itself.</param>
         public static void PackageReturnValue(this ILProcessor il, ModuleDefinition module, TypeReference returnType)
@@ -80,16 +80,16 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Pushes the current <paramref name="method"/> onto the stack.
+        ///     Pushes the current <paramref name="method" /> onto the stack.
         /// </summary>
-        /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
-        /// <param name="method">The method that represents the <see cref="MethodInfo"/> that will be pushed onto the stack.</param>
+        /// <param name="IL">The <see cref="ILProcessor" /> that will be used to create the instructions.</param>
+        /// <param name="method">The method that represents the <see cref="MethodInfo" /> that will be pushed onto the stack.</param>
         /// <param name="module">The module that contains the host method.</param>
         public static void PushMethod(this ILProcessor IL, MethodReference method, ModuleDefinition module)
         {
             var getMethodFromHandle = module.ImportMethod<MethodBase>("GetMethodFromHandle",
-                typeof(RuntimeMethodHandle),
-                typeof(RuntimeTypeHandle));
+                typeof (RuntimeMethodHandle),
+                typeof (RuntimeTypeHandle));
 
             var declaringType = method.DeclaringType;
 
@@ -98,7 +98,7 @@ namespace Deflector
             if (declaringType.GenericParameters.Count > 0)
             {
                 var genericType = new GenericInstanceType(declaringType);
-                foreach (GenericParameter parameter in declaringType.GenericParameters)
+                foreach (var parameter in declaringType.GenericParameters)
                 {
                     genericType.GenericArguments.Add(parameter);
                 }
@@ -113,10 +113,10 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Stores the <paramref name="param">current parameter value</paramref>
-        /// into the array of method <paramref name="arguments"/>.
+        ///     Stores the <paramref name="param">current parameter value</paramref>
+        ///     into the array of method <paramref name="arguments" />.
         /// </summary>
-        /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
+        /// <param name="IL">The <see cref="ILProcessor" /> that will be used to create the instructions.</param>
         /// <param name="arguments">The local variable that will store the method arguments.</param>
         /// <param name="index">The array index that indicates where the parameter value will be stored in the array of arguments.</param>
         /// <param name="param">The current argument value being stored.</param>
@@ -144,12 +144,12 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Saves the current method signature of a method into an array
-        /// of <see cref="System.Type"/> objects. This can be used to determine the
-        /// signature of methods with generic type parameters or methods that have
-        /// parameters that are generic parameters specified by the type itself.
+        ///     Saves the current method signature of a method into an array
+        ///     of <see cref="System.Type" /> objects. This can be used to determine the
+        ///     signature of methods with generic type parameters or methods that have
+        ///     parameters that are generic parameters specified by the type itself.
         /// </summary>
-        /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
+        /// <param name="IL">The <see cref="ILProcessor" /> that will be used to create the instructions.</param>
         /// <param name="method">The target method whose generic type arguments (if any) will be saved into the local variable .</param>
         /// <param name="module">The module that contains the host method.</param>
         /// <param name="parameterTypes">The local variable that will store the current method signature.</param>
@@ -171,15 +171,15 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Pushes a <paramref name="Type"/> instance onto the stack.
+        ///     Pushes a <paramref name="Type" /> instance onto the stack.
         /// </summary>
-        /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
-        /// <param name="type">The type that represents the <see cref="Type"/> that will be pushed onto the stack.</param>
+        /// <param name="IL">The <see cref="ILProcessor" /> that will be used to create the instructions.</param>
+        /// <param name="type">The type that represents the <see cref="Type" /> that will be pushed onto the stack.</param>
         /// <param name="module">The module that contains the host method.</param>
         public static void PushType(this ILProcessor IL, TypeReference type, ModuleDefinition module)
         {
             var getTypeFromHandle = module.ImportMethod<Type>("GetTypeFromHandle",
-                typeof(RuntimeTypeHandle));
+                typeof (RuntimeTypeHandle));
 
             // Instantiate the generic type before pushing it onto the stack
             var declaringType = GetDeclaringType(type);
@@ -189,16 +189,16 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Pushes the arguments of a method onto the stack.
+        ///     Pushes the arguments of a method onto the stack.
         /// </summary>
-        /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
+        /// <param name="IL">The <see cref="ILProcessor" /> that will be used to create the instructions.</param>
         /// <param name="module">The module that contains the host method.</param>
         /// <param name="method">The target method.</param>
         /// <param name="arguments">The <see cref="VariableDefinition">local variable</see> that will hold the array of arguments.</param>
         public static void PushArguments(this ILProcessor IL, IMethodSignature method, ModuleDefinition module,
             VariableDefinition arguments)
         {
-            var objectType = module.ImportType(typeof(object));
+            var objectType = module.ImportType(typeof (object));
             var parameterCount = method.Parameters.Count;
             IL.Emit(OpCodes.Ldc_I4, parameterCount);
             IL.Emit(OpCodes.Newarr, objectType);
@@ -208,14 +208,14 @@ namespace Deflector
                 return;
 
             var index = 0;
-            foreach (ParameterDefinition param in method.Parameters)
+            foreach (var param in method.Parameters)
             {
                 IL.PushParameter(index++, arguments, param);
             }
         }
 
         /// <summary>
-        /// Gets the declaring type for the target method.
+        ///     Gets the declaring type for the target method.
         /// </summary>
         /// <param name="method">The target method.</param>
         /// <returns>The declaring type.</returns>
@@ -226,7 +226,7 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Obtains the declaring type for a given type reference.
+        ///     Obtains the declaring type for a given type reference.
         /// </summary>
         /// <param name="declaringType">The declaring ty pe.</param>
         /// <returns>The actual declaring type.</returns>
@@ -234,7 +234,7 @@ namespace Deflector
         {
             // Instantiate the generic type before determining
             // the current method
-            if (declaringType.GenericParameters.Count <= 0) 
+            if (declaringType.GenericParameters.Count <= 0)
                 return declaringType;
 
             var genericType = new GenericInstanceType(declaringType);
@@ -248,12 +248,15 @@ namespace Deflector
         }
 
         /// <summary>
-        /// Saves the generic type arguments that were used to construct the method.
+        ///     Saves the generic type arguments that were used to construct the method.
         /// </summary>
-        /// <param name="IL">The <see cref="ILProcessor"/> that will be used to create the instructions.</param>
-        /// <param name="method">The target method whose generic type arguments (if any) will be saved into the <paramref name="typeArguments">local variable</paramref>.</param>
+        /// <param name="IL">The <see cref="ILProcessor" /> that will be used to create the instructions.</param>
+        /// <param name="method">
+        ///     The target method whose generic type arguments (if any) will be saved into the
+        ///     <paramref name="typeArguments">local variable</paramref>.
+        /// </param>
         /// <param name="module">The module that contains the host method.</param>
-        /// <param name="typeArguments">The local variable that will store the resulting array of <see cref="Type"/> objects.</param>
+        /// <param name="typeArguments">The local variable that will store the resulting array of <see cref="Type" /> objects.</param>
         public static void PushGenericArguments(this ILProcessor IL, IGenericParameterProvider method,
             ModuleDefinition module, VariableDefinition typeArguments)
         {
