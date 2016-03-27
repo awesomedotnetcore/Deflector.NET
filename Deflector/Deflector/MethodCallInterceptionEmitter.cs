@@ -380,6 +380,10 @@ namespace Deflector
             // Push the current method
             SaveMethodCallArguments(il, targetMethod);
 
+            // Save the calling method
+            il.PushMethod(callingMethod, module);
+            il.Emit(OpCodes.Stloc, _callingMethod);
+
             PushThisPointer(il, targetMethod);
 
             SaveCurrentMethod(il, targetMethod, module);
