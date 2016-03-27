@@ -30,7 +30,7 @@ namespace Deflector
             if (!bestMatch.HasCompatibleMethodSignatureWith(_implementation.Method))
                 return;
 
-            methodCallMap.Add(bestMatch, new DelegateMethodCall(_implementation));
+            methodCallMap.Add(method => method == bestMatch, new DelegateMethodCall(_implementation));
         }
     }
 }

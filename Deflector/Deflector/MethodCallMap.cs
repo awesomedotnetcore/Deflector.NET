@@ -9,25 +9,25 @@ namespace Deflector
 {
     public class MethodCallMap : IMethodCallMap
     {
-        private ConcurrentDictionary<MethodBase, IMethodCall> _callMap =
-            new ConcurrentDictionary<MethodBase, IMethodCall>();
+        private ConcurrentDictionary<Func<MethodBase, bool>, IMethodCall> _callMap =
+            new ConcurrentDictionary<Func<MethodBase, bool>, IMethodCall>();
         public bool ContainsMappingFor(MethodBase method)
         {
             var keys = _callMap.Keys;
-            var closestMatch = keys.GetBestMatch(method);
-            
-            return closestMatch != null;
+            var result = keys.Any(filter => filter(method));
+
+            return result;
         }
 
-        public void Add(MethodBase method, IMethodCall methodCall)
+        public void Add(Func<MethodBase, bool> methodFilter, IMethodCall methodCall)
         {
-            _callMap[method] = methodCall;
+            _callMap[methodFilter] = methodCall;
         }
 
         public IMethodCall GetMethodCall(MethodBase method)
         {
             var keys = _callMap.Keys;
-            var closestMatch = keys.GetBestMatch(method);
+            var closestMatch = keys.First(filter => filter(method));
 
             return closestMatch != null ? _callMap[closestMatch] : null;
         }
