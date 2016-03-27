@@ -7,16 +7,16 @@ using System.Text;
 
 namespace Deflector
 {
-    public class CompositeMethodCallProvider : IMethodCallProvider
+    public class CompositeMethodCallBinder : IMethodCallBinder
     {
-        private readonly IEnumerable<IMethodCallProvider> _methodCallProviders;
+        private readonly IEnumerable<IMethodCallBinder> _methodCallProviders;
 
-        public CompositeMethodCallProvider(params IMethodCallProvider[] methodCallProviders)
-            : this((IEnumerable<IMethodCallProvider>)methodCallProviders)
+        public CompositeMethodCallBinder(params IMethodCallBinder[] methodCallBinders)
+            : this((IEnumerable<IMethodCallBinder>)methodCallBinders)
         {
         }
 
-        public CompositeMethodCallProvider(IEnumerable<IMethodCallProvider> methodCallProviders)
+        public CompositeMethodCallBinder(IEnumerable<IMethodCallBinder> methodCallProviders)
         {
             _methodCallProviders = methodCallProviders;
         }

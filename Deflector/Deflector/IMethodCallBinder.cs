@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Deflector
 {
-    public interface IMethodCallProvider
+    public interface IMethodCallBinder
     {
         void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods, 
             IMethodCallMap methodCallMap, StackTrace stackTrace);

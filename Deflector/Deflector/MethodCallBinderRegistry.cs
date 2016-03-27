@@ -5,16 +5,16 @@ using System.Diagnostics;
 
 namespace Deflector
 {
-    public static class MethodCallProviderRegistry
+    public static class MethodCallBinderRegistry
     {
-        private static readonly List<IMethodCallProvider> _providers = new List<IMethodCallProvider>();
+        private static readonly List<IMethodCallBinder> _providers = new List<IMethodCallBinder>();
         private static readonly object _lock = new object();
 
-        public static void AddProvider(IMethodCallProvider methodCallProvider)
+        public static void AddProvider(IMethodCallBinder methodCallBinder)
         {
             lock (_lock)
             {
-                _providers.Add(methodCallProvider);    
+                _providers.Add(methodCallBinder);    
             }            
         }
 
@@ -25,11 +25,11 @@ namespace Deflector
                 _providers.Clear();
             }
         }
-        public static IMethodCallProvider GetProvider()
+        public static IMethodCallBinder GetProvider()
         {
             lock (_lock)
             {
-                return new CompositeMethodCallProvider(_providers);
+                return new CompositeMethodCallBinder(_providers);
             }
         }
 

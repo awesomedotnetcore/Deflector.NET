@@ -7,12 +7,12 @@ using System.Text;
 
 namespace Deflector
 {
-    public class SingleMethodCallProvider : IMethodCallProvider
+    public class SingleMethodCallBinder : IMethodCallBinder
     {
         private readonly MethodBase _targetMethod;
         private readonly MulticastDelegate _implementation;
 
-        public SingleMethodCallProvider(MethodBase targetMethod, MulticastDelegate implementation)
+        public SingleMethodCallBinder(MethodBase targetMethod, MulticastDelegate implementation)
         {
             _targetMethod = targetMethod;
             _implementation = implementation;

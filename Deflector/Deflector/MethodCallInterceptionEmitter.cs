@@ -51,7 +51,7 @@ namespace Deflector
             _stackCtor = module.ImportConstructor<Stack<object>>(new Type[0]);
             _markerAttributeCtor = module.ImportConstructor<MethodCallsAlreadyInterceptedAttribute>(new Type[0]);
             _markerAttributeType = module.ImportType<MethodCallsAlreadyInterceptedAttribute>();
-            _addMethodCalls = module.ImportMethod<IMethodCallProvider>("AddMethodCalls");
+            _addMethodCalls = module.ImportMethod<IMethodCallBinder>("AddMethodCalls");
 
             var types = new[]
             {
@@ -123,8 +123,8 @@ namespace Deflector
                 il.Emit(OpCodes.Stloc,_callingMethod);
 
                 // Precalculate all method call interceptors            
-                var provider = method.AddLocal<IMethodCallProvider>();
-                var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallProviderRegistry));
+                var provider = method.AddLocal<IMethodCallBinder>();
+                var getProvider = module.ImportMethod("GetProvider", typeof(MethodCallBinderRegistry));
 
                 // Obtain the method call provider instance
                 il.Emit(OpCodes.Call, getProvider);

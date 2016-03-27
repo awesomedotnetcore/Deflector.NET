@@ -236,7 +236,7 @@ namespace Deflector
                         "The delegate you provided does not have a compatible signature with the '{0}' method.",
                         targetMethod.Name));
 
-            MethodCallProviderRegistry.AddProvider(new SingleMethodCallProvider(targetMethod, implementation));
+            MethodCallBinderRegistry.AddProvider(new SingleMethodCallBinder(targetMethod, implementation));
         }
 
         private static MethodInfo GetMethodImpl(LambdaExpression expression)
