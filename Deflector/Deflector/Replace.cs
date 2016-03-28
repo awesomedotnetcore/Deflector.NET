@@ -150,7 +150,7 @@ namespace Deflector
             return () => GetMethodImpl(expression);
         }
 
-        public static Func<MethodBase, bool> AnyMethodThat(Func<MethodBase, bool> filter)
+        public static Func<MethodBase, bool> Methods(Func<MethodBase, bool> filter)
         {
             return filter;
         }

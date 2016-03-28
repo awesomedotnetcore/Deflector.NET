@@ -62,7 +62,7 @@ namespace Deflector.Tests
             var callCount = 0;
             Action callCounter = () => callCount++;
 
-            Replace.Method((SampleClassThatCallsAnInstanceMethod c) => c.DoSomethingElse()).With(callCounter);
+            Replace.Method<SampleClassThatCallsAnInstanceMethod>(c => c.DoSomethingElse()).With(callCounter);
 
             var typeName = "SampleClassThatCallsAnInstanceMethod";
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
@@ -79,7 +79,7 @@ namespace Deflector.Tests
             var methodCall = A.Fake<IMethodCall>();
             A.CallTo(() => methodCall.Invoke(A<IInvocationInfo>.Ignored)).Invokes(callCounter);
 
-            Replace.Method((SampleClassThatCallsAnInstanceMethod c) => c.DoSomethingElse()).With(methodCall);
+            Replace.Method<SampleClassThatCallsAnInstanceMethod>(c => c.DoSomethingElse()).With(methodCall);
 
             var typeName = "SampleClassThatCallsAnInstanceMethod";
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
@@ -89,7 +89,7 @@ namespace Deflector.Tests
 
         [Test]
         public void Should_intercept_multiple_methods_with_custom_method_call()
-        {            
+        {
             var callCount = 0;
             Action callCounter = () => callCount++;
 
@@ -99,7 +99,7 @@ namespace Deflector.Tests
             // Redirect the method calls
             var assemblyDefinition = RewriteAssemblyOf<SampleClassWithMultipleMethodCalls>();
 
-            Replace.AnyMethodThat(m => m.DeclaringType == typeof (Console) && m.Name == "WriteLine")
+            Replace.Methods(m => m.DeclaringType == typeof(Console) && m.Name == "WriteLine")
                 .With(methodCall);
 
             // Both calls to Console.WriteLine should be redirected
