@@ -8,85 +8,85 @@ namespace Deflector
 {
     public static class Replace
     {
-        public static Func<KeyValuePair<IEnumerable<MethodBase>, T>> ConstructorCallOn<T>()
+        public static Func<Tuple<IEnumerable<MethodBase>, T>> ConstructorCallOn<T>()
         {
             return () =>
             {
                 var constructors =
-                    typeof (T).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    typeof(T).GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
-                return new KeyValuePair<IEnumerable<MethodBase>, T>(constructors, default(T));
+                return new Tuple<IEnumerable<MethodBase>, T>(constructors, default(T));
             };
         }
 
         public static void With<T1, T2, T3, T4, T5, T6, T7, TResult>(
-            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            this Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             Func<T1, T2, T3, T4, T5, T6, T7, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
         public static void With<T1, T2, T3, T4, T5, T6, TResult>(
-            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            this Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             Func<T1, T2, T3, T4, T5, T6, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
         public static void With<T1, T2, T3, T4, T5, TResult>(
-            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            this Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             Func<T1, T2, T3, T4, T5, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
         public static void With<T1, T2, T3, T4, TResult>(
-            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            this Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             Func<T1, T2, T3, T4, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
         public static void With<T1, T2, T3, TResult>(
-            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            this Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             Func<T1, T2, T3, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
         public static void With<T1, T2, TResult>(
-            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            this Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             Func<T1, T2, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
         public static void With<T1, TResult>(
-            this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            this Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             Func<T1, TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
-        public static void With<TResult>(this Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+        public static void With<TResult>(this Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             Func<TResult> implementation)
         {
             WithConstructorImpl(getConstructorData, implementation);
         }
 
         private static void WithConstructorImpl<TResult>(
-            Func<KeyValuePair<IEnumerable<MethodBase>, TResult>> getConstructorData,
+            Func<Tuple<IEnumerable<MethodBase>, TResult>> getConstructorData,
             MulticastDelegate implementation)
         {
             var constructorData = getConstructorData();
-            var constructors = constructorData.Key;
+            var constructors = constructorData.Item1;
             var implementationMethod = implementation.Method;
             var matchingConstructor = constructors.GetBestMatch(implementationMethod);
             if (matchingConstructor == null)
                 throw new InvalidOperationException(
                     string.Format(
                         "Unable to find a compatible constructor from type '{0}' that matches the current implementation delegate.",
-                        typeof (TResult).FullName));
+                        typeof(TResult).FullName));
 
             AddMethodCall(matchingConstructor, implementation);
         }
@@ -114,8 +114,7 @@ namespace Deflector
             var propertyInfo = metaData.Item1;
             var targetMethod = propertyInfo.GetSetMethod();
             if (targetMethod == null)
-                throw new InvalidOperationException(string.Format("The property '{0}' has no setter method.",
-                    propertyInfo.Name));
+                throw new InvalidOperationException($"The property '{propertyInfo.Name}' has no setter method.");
 
             AddMethodCall(targetMethod, setterImplementation);
         }
@@ -126,8 +125,7 @@ namespace Deflector
             var propertyInfo = metaData.Item1;
             var targetMethod = propertyInfo.GetGetMethod();
             if (targetMethod == null)
-                throw new InvalidOperationException(string.Format("The property '{0}' has no getter method.",
-                    propertyInfo.Name));
+                throw new InvalidOperationException($"The property '{propertyInfo.Name}' has no getter method.");
 
             AddMethodCall(targetMethod, getterImplementation);
         }
@@ -150,6 +148,25 @@ namespace Deflector
         public static Func<MethodBase> Method<T>(Expression<Func<Action<T>>> expression)
         {
             return () => GetMethodImpl(expression);
+        }
+
+        public static void With(this Func<MethodBase> methodSelector, IMethodCall methodCall)
+        {
+            var targetMethod = methodSelector();
+
+            Func<MethodBase, bool> selector = method =>
+            {
+                // Match the methods by declaring type name and signature
+                // Note: The CLR doesn't see the two methods as the same type
+                // since one of the other types will be modified by the Deflector library
+                var result = method?.DeclaringType?.FullName == targetMethod?.DeclaringType?.FullName && 
+                    method.HasCompatibleMethodSignatureWith(targetMethod);
+
+                return result;
+            };
+
+            var binder = new MethodCallBinder(selector, methodCall);
+            MethodCallBinderRegistry.AddBinder(binder);
         }
 
         public static void With<T1, T2, T3, T4, T5, T6, T7>(this Func<MethodBase> methodSelector,
@@ -261,30 +278,30 @@ namespace Deflector
                         "The delegate you provided does not have a compatible signature with the '{0}' method.",
                         targetMethod.Name));
 
-            MethodCallBinderRegistry.AddProvider(new SingleMethodCallBinder(targetMethod, implementation));
+            MethodCallBinderRegistry.AddBinder(new DelegateBinder(targetMethod, implementation));
         }
 
         private static MethodInfo GetMethodImpl(LambdaExpression expression)
         {
             var body = expression.Body;
-            var unaryExpression = (UnaryExpression) body;
-            var operand = (MethodCallExpression) unaryExpression.Operand;
+            var unaryExpression = (UnaryExpression)body;
+            var operand = (MethodCallExpression)unaryExpression.Operand;
             var methodCallExpression = operand;
 
             var arguments = methodCallExpression.Arguments;
-            var constantExpression = (ConstantExpression) arguments.Last();
+            var constantExpression = (ConstantExpression)arguments.Last();
 
-            return (MethodInfo) constantExpression.Value;
+            return (MethodInfo)constantExpression.Value;
         }
 
         private static MethodInfo GetMethodByCall(LambdaExpression expression)
         {
-            return ((MethodCallExpression) expression.Body).Method;
+            return ((MethodCallExpression)expression.Body).Method;
         }
 
         private static PropertyInfo GetPropertyImpl(LambdaExpression p)
         {
-            return (PropertyInfo) ((MemberExpression) p.Body).Member;
+            return (PropertyInfo)((MemberExpression)p.Body).Member;
         }
     }
 }

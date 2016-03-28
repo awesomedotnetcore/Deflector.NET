@@ -6,7 +6,7 @@ namespace Deflector
     {
         private static readonly ConcurrentQueue<IMethodCallBinder> _providers = new ConcurrentQueue<IMethodCallBinder>();
 
-        public static void AddProvider(IMethodCallBinder methodCallBinder)
+        public static void AddBinder(IMethodCallBinder methodCallBinder)
         {
             _providers.Enqueue(methodCallBinder);
         }

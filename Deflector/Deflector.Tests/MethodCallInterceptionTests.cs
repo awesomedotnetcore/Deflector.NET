@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using FakeItEasy;
 using Mono.Cecil;
 using NUnit.Framework;
 using SampleLibrary;
@@ -12,7 +13,7 @@ namespace Deflector.Tests
     {
         private AssemblyDefinition RewriteAssemblyOf<T>()
         {
-            var assemblyLocation = typeof (T).Assembly.Location;
+            var assemblyLocation = typeof(T).Assembly.Location;
             var assemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyLocation);
             var emitter = new MethodCallInterceptionEmitter();
             emitter.Rewrite(assemblyDefinition);
@@ -59,6 +60,25 @@ namespace Deflector.Tests
 
             var typeName = "SampleClassThatCallsAnInstanceMethod";
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
+        }
+
+        [Test]
+        public void Should_intercept_instance_methods_with_custom_method_call()
+        {
+            var assemblyDefinition = RewriteAssemblyOf<SampleClassThatCallsAnInstanceMethod>();
+
+            var callCount = 0;
+            Action callCounter = () => callCount++;
+
+            var methodCall = A.Fake<IMethodCall>();
+            A.CallTo(() => methodCall.Invoke(A<IInvocationInfo>.Ignored)).Invokes(callCounter);
+
+            Replace.Method((SampleClassThatCallsAnInstanceMethod c) => c.DoSomethingElse()).With(methodCall);
+
+            var typeName = "SampleClassThatCallsAnInstanceMethod";
+            TestModifiedType(assemblyDefinition, typeName, ref callCount);
+
+            A.CallTo(() => methodCall.Invoke(A<IInvocationInfo>.Ignored)).MustHaveHappened();
         }
 
         [Test]

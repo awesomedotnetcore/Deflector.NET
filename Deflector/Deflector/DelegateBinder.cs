@@ -5,16 +5,17 @@ using System.Reflection;
 
 namespace Deflector
 {
-    public class SingleMethodCallBinder : IMethodCallBinder
+    public class DelegateBinder : IMethodCallBinder
     {
         private readonly MulticastDelegate _implementation;
         private readonly MethodBase _targetMethod;
 
-        public SingleMethodCallBinder(MethodBase targetMethod, MulticastDelegate implementation)
+        public DelegateBinder(MethodBase targetMethod, MulticastDelegate implementation)
         {
             _targetMethod = targetMethod;
             _implementation = implementation;
         }
+
 
         public void AddMethodCalls(object target, MethodBase hostMethod, IEnumerable<MethodBase> interceptedMethods,
             IMethodCallMap methodCallMap,

@@ -72,6 +72,7 @@
     <Compile Include="IMethodCallBinder.cs" />
     <Compile Include="InvocationInfo.cs" />
     <Compile Include="MethodBodyRewriterExtensions.cs" />
+    <Compile Include="MethodCallBinder.cs" />
     <Compile Include="MethodCallInterceptionEmitter.cs" />
     <Compile Include="MethodCallMap.cs" />
     <Compile Include="MethodCallMapRegistry.cs" />
@@ -83,7 +84,7 @@
     <Compile Include="ParameterDefinitionExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Replace.cs" />
-    <Compile Include="SingleMethodCallBinder.cs" />
+    <Compile Include="DelegateBinder.cs" />
     <Compile Include="TypeDefinitionExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
