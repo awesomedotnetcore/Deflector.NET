@@ -22,6 +22,11 @@ namespace Deflector
         object Target { get; }
 
         /// <summary>
+        /// The calling instance that called the current method.
+        /// </summary>
+        object CallingInstance { get; }
+
+        /// <summary>
         ///     The method currently being called.
         /// </summary>
         MethodBase TargetMethod { get; }

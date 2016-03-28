@@ -35,6 +35,7 @@ namespace Deflector
         private MethodReference _stackCtor;
         private VariableDefinition _stackTrace;
         private VariableDefinition _target;
+        private VariableDefinition _callingInstance;    
         private MethodReference _toArray;
         private VariableDefinition _typeArguments;
 
@@ -53,6 +54,7 @@ namespace Deflector
 
             var types = new[]
             {
+                typeof (object),
                 typeof (object),
                 typeof (MethodBase),
                 typeof (MethodBase),
@@ -84,6 +86,7 @@ namespace Deflector
             _currentArgsAsArray = hostMethod.AddLocal<object[]>();
             _hasExistingMap = hostMethod.AddLocal<bool>();
             _callingMethod = hostMethod.AddLocal<MethodBase>();
+            _callingInstance = hostMethod.AddLocal<object>("__callingInstance");
         }
 
         public void Rewrite(MethodDefinition method, ModuleDefinition module)
@@ -267,7 +270,14 @@ namespace Deflector
             var systemType = module.Import(typeof (Type));
 
             // Note: There is no 'this' pointer when the constructor isn't called yet
-            il.Emit(OpCodes.Ldnull);
+            il.LdNull();
+            il.Emit(OpCodes.Stloc, _target);
+
+            var pushCallingInstance = !hostMethod.HasThis || hostMethod.IsConstructor ? OpCodes.Ldnull : OpCodes.Ldarg_0;
+
+            il.Emit(pushCallingInstance);
+            il.Emit(OpCodes.Stloc, _callingInstance);
+
             SaveParameterTypes(il, constructor, module, systemType);
             SaveTypeArguments(il, constructor, module, systemType);
             SaveCurrentMethod(il, constructor, module);
@@ -385,6 +395,13 @@ namespace Deflector
             il.Emit(OpCodes.Stloc, _callingMethod);
 
             PushThisPointer(il, targetMethod);
+            il.Emit(OpCodes.Stloc, _target);
+
+            // Save the caller instance
+            var pushCallingInstance = !callingMethod.HasThis || callingMethod.IsConstructor ? OpCodes.Ldnull : OpCodes.Ldarg_0;
+
+            il.Emit(pushCallingInstance);
+            il.Emit(OpCodes.Stloc, _callingInstance);
 
             SaveCurrentMethod(il, targetMethod, module);
             SaveStackTrace(il, module);
@@ -397,12 +414,15 @@ namespace Deflector
 
         private void SaveCurrentInvocationInfo(ILProcessor il)
         {
+            il.Emit(OpCodes.Ldloc, _target);
+            il.Emit(OpCodes.Ldloc, _callingInstance);
             il.Emit(OpCodes.Ldloc, _callingMethod);
             il.Emit(OpCodes.Ldloc, _currentMethod);
             il.Emit(OpCodes.Ldloc, _stackTrace);
             il.Emit(OpCodes.Ldloc, _parameterTypes);
             il.Emit(OpCodes.Ldloc, _typeArguments);
             il.Emit(OpCodes.Ldloc, _currentArgsAsArray);
+
             il.Emit(OpCodes.Newobj, _invocationInfoCtor);
             il.Emit(OpCodes.Stloc, _invocationInfo);
         }

@@ -27,6 +27,19 @@ namespace Deflector
         }
 
         /// <summary>
+        /// Pushes a null value onto the stack.
+        /// </summary>
+        /// <param name="IL">The IL processor that will push the null values onto the stack.</param>
+        /// <param name="numberOfNullsToPush">The number of values to push onto the stack.</param>
+        public static void LdNull(this ILProcessor IL, int numberOfNullsToPush = 1)
+        {
+            for (var i = 0; i < numberOfNullsToPush; i++)
+            {
+                IL.Emit(OpCodes.Ldnull);
+            }
+        }
+
+        /// <summary>
         ///     Emits a Console.WriteLine call to using the current ILProcessor that will only be called if the contents
         ///     of the target variable are null at runtime.
         /// </summary>

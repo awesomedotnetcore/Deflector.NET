@@ -18,6 +18,7 @@ namespace Deflector
         ///     Initializes the <see cref="InvocationInfo" /> instance.
         /// </summary>
         /// <param name="target">The target instance currently being called.</param>
+        /// <param name="callingInstance">The object instance that is currently calling the target method.</param>
         /// <param name="callingMethod">The calling method.</param>
         /// <param name="targetMethod">The method currently being called.</param>
         /// <param name="stackTrace"> The <see cref="StackTrace" /> associated with the method call when the call was made.</param>
@@ -28,11 +29,12 @@ namespace Deflector
         ///     method.
         /// </param>
         /// <param name="arguments">The arguments used in the method call.</param>
-        public InvocationInfo(object target, MethodBase callingMethod, MethodBase targetMethod,
+        public InvocationInfo(object target, object callingInstance, MethodBase callingMethod, MethodBase targetMethod,
             StackTrace stackTrace, Type[] parameterTypes,
             Type[] typeArguments, object[] arguments)
         {
             Target = target;
+            CallingInstance = callingInstance;
             CallingMethod = callingMethod;
             TargetMethod = targetMethod;
             StackTrace = stackTrace;
@@ -55,6 +57,11 @@ namespace Deflector
         /// </summary>
         /// <remarks>This typically is a reference to a proxy object.</remarks>
         public object Target { get; }
+
+        /// <summary>
+        /// The calling instance that called the current method.
+        /// </summary>
+        public object CallingInstance { get; }
 
         /// <summary>
         ///     The method currently being called.
@@ -113,7 +120,7 @@ namespace Deflector
                 var argument = arguments.Dequeue();
 
                 if (argument is string)
-                    argument = string.Format("\"{0}\"", argument);
+                    argument = $"\"{argument}\"";
 
                 writer.Write(argument);
 
