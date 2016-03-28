@@ -155,6 +155,11 @@ namespace Deflector
             return filter;
         }
 
+        public static Func<MethodBase, bool> Methods<T>(Func<MethodBase, bool> filter)
+        {
+            return method => filter(method) && method.DeclaringType == typeof (T);
+        }
+
         public static void With(this Func<MethodBase, bool> methodSelector, IMethodCall methodCall)
         {
             var binder = new MethodCallBinder(methodSelector, methodCall);
