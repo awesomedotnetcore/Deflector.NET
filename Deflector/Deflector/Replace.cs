@@ -150,6 +150,17 @@ namespace Deflector
             return () => GetMethodImpl(expression);
         }
 
+        public static Func<MethodBase, bool> AnyMethodThat(Func<MethodBase, bool> filter)
+        {
+            return filter;
+        }
+
+        public static void With(this Func<MethodBase, bool> methodSelector, IMethodCall methodCall)
+        {
+            var binder = new MethodCallBinder(methodSelector, methodCall);
+            MethodCallBinderRegistry.AddBinder(binder);
+        }
+
         public static void With(this Func<MethodBase> methodSelector, IMethodCall methodCall)
         {
             var targetMethod = methodSelector();

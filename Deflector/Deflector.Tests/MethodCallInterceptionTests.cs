@@ -23,11 +23,17 @@ namespace Deflector.Tests
 
         private static void TestModifiedType(AssemblyDefinition assemblyDefinition, string typeName, ref int callCount)
         {
+            var instance = CreateModifiedType(assemblyDefinition, typeName);
+            instance.DoSomething();
+            Assert.AreEqual(1, callCount);
+        }
+
+        private static dynamic CreateModifiedType(AssemblyDefinition assemblyDefinition, string typeName)
+        {
             var assembly = assemblyDefinition.ToAssembly();
             var targetType = assembly.GetTypes().First(t => t.Name == typeName);
             dynamic instance = Activator.CreateInstance(targetType);
-            instance.DoSomething();
-            Assert.AreEqual(1, callCount);
+            return instance;
         }
 
         [Test]
@@ -78,6 +84,30 @@ namespace Deflector.Tests
             var typeName = "SampleClassThatCallsAnInstanceMethod";
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
 
+            A.CallTo(() => methodCall.Invoke(A<IInvocationInfo>.Ignored)).MustHaveHappened();
+        }
+
+        [Test]
+        public void Should_intercept_multiple_methods_with_custom_method_call()
+        {            
+            var callCount = 0;
+            Action callCounter = () => callCount++;
+
+            var methodCall = A.Fake<IMethodCall>();
+            A.CallTo(() => methodCall.Invoke(A<IInvocationInfo>.Ignored)).Invokes(callCounter);
+
+            // Redirect the method calls
+            var assemblyDefinition = RewriteAssemblyOf<SampleClassWithMultipleMethodCalls>();
+
+            Replace.AnyMethodThat(m => m.DeclaringType == typeof (Console) && m.Name == "WriteLine")
+                .With(methodCall);
+
+            // Both calls to Console.WriteLine should be redirected
+            var typeName = "SampleClassWithMultipleMethodCalls";
+            dynamic modifiedTypeInstance = CreateModifiedType(assemblyDefinition, typeName);
+            modifiedTypeInstance.DoSomething();
+
+            Assert.AreEqual(2, callCount);
             A.CallTo(() => methodCall.Invoke(A<IInvocationInfo>.Ignored)).MustHaveHappened();
         }
 
