@@ -15,8 +15,7 @@ namespace Deflector.Tests
         {
             var assemblyLocation = typeof(T).Assembly.Location;
             var assemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyLocation);
-            var emitter = new MethodCallInterceptionEmitter();
-            emitter.Rewrite(assemblyDefinition);
+            assemblyDefinition.AddInterceptionHooks();
 
             return assemblyDefinition;
         }
