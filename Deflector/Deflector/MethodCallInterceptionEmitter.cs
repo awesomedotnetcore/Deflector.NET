@@ -241,11 +241,11 @@ namespace Deflector
             }
 
 
-            //AddMethodInterceptionHooks(oldInstruction, il, constructor, module);
             var skipInterception = il.Create(OpCodes.Nop);
 
             il.Emit(OpCodes.Ldloc, _callMap);
             il.Emit(OpCodes.Brfalse, skipInterception);
+
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(constructor, module);
             il.Emit(OpCodes.Callvirt, _containsKey);
@@ -256,7 +256,6 @@ namespace Deflector
             il.Emit(OpCodes.Ldloc, _hasMethodCall);
             il.Emit(OpCodes.Brfalse, skipInterception);
 
-            // TODO: Insert the interception code here
             il.Emit(OpCodes.Ldloc, _callMap);
 
             il.PushMethod(constructor, module);
@@ -325,13 +324,17 @@ namespace Deflector
             MethodDefinition hostMethod,
             ModuleDefinition module)
         {
+            var skipInterception = il.Create(OpCodes.Nop);
+
+            // Call the original method if there is no matching call map
+            il.Emit(OpCodes.Ldloc, _callMap);
+            il.Emit(OpCodes.Brfalse, skipInterception);
+
             // Grab the method call instance
             il.Emit(OpCodes.Ldloc, _callMap);
             il.PushMethod(targetMethod, module);
             il.Emit(OpCodes.Callvirt, _containsKey);
 
-
-            var skipInterception = il.Create(OpCodes.Nop);
             il.Emit(OpCodes.Brfalse, skipInterception);
 
 
