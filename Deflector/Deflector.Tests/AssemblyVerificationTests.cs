@@ -1,13 +1,12 @@
 ﻿using Mono.Cecil;
-using NUnit.Framework;
 using SampleLibrary;
+using Xunit;
 
 namespace Deflector.Tests
 {
-    [TestFixture]
     public class AssemblyVerificationTests : BaseAssemblyVerificationTestFixture
     {
-        [Test]
+        [Fact]
         public void Should_emit_valid_assembly()
         {
             var assemblyLocation = typeof (SampleClassWithInstanceMethod).Assembly.Location;

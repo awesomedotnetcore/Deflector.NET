@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using FakeItEasy;
 using Mono.Cecil;
-using NUnit.Framework;
 using SampleLibrary;
+using Xunit;
 
 namespace Deflector.Tests
 {
-    [TestFixture]
     public class MethodCallInterceptionTests : BaseAssemblyVerificationTestFixture
     {
         private AssemblyDefinition RewriteAssemblyOf<T>()
@@ -24,7 +23,7 @@ namespace Deflector.Tests
         {
             var instance = CreateModifiedType(assemblyDefinition, typeName);
             instance.DoSomething();
-            Assert.AreEqual(1, callCount);
+            Assert.Equal(1, callCount);
         }
 
         private static dynamic CreateModifiedType(AssemblyDefinition assemblyDefinition, string typeName)
@@ -35,7 +34,7 @@ namespace Deflector.Tests
             return instance;
         }
 
-        [Test]
+        [Fact]
         public void Should_intercept_constructor_call()
         {
             var assemblyDefinition = RewriteAssemblyOf<SampleClassWithConstructorCall>();
@@ -53,7 +52,7 @@ namespace Deflector.Tests
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
-        [Test]
+        [Fact]
         public void Should_intercept_instance_method()
         {
             var assemblyDefinition = RewriteAssemblyOf<SampleClassThatCallsAnInstanceMethod>();
@@ -67,7 +66,7 @@ namespace Deflector.Tests
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
-        [Test]
+        [Fact]
         public void Should_intercept_instance_methods_with_custom_method_call()
         {
             var assemblyDefinition = RewriteAssemblyOf<SampleClassThatCallsAnInstanceMethod>();
@@ -86,7 +85,7 @@ namespace Deflector.Tests
             A.CallTo(() => methodCall.Invoke(A<IInvocationInfo>.Ignored)).MustHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void Should_intercept_multiple_methods_with_custom_method_call()
         {
             var callCount = 0;
@@ -106,11 +105,11 @@ namespace Deflector.Tests
             dynamic modifiedTypeInstance = CreateModifiedType(assemblyDefinition, typeName);
             modifiedTypeInstance.DoSomething();
 
-            Assert.AreEqual(2, callCount);
+            Assert.Equal(2, callCount);
             A.CallTo(() => methodCall.Invoke(A<IInvocationInfo>.Ignored)).MustHaveHappened();
         }
 
-        [Test]
+        [Fact]
         public void Should_intercept_property_getter()
         {
             var callCount = 0;
@@ -128,7 +127,7 @@ namespace Deflector.Tests
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
-        [Test]
+        [Fact]
         public void Should_intercept_property_setter()
         {
             var callCount = 0;
@@ -138,7 +137,7 @@ namespace Deflector.Tests
                 callCount++;
 
                 // Match the setter value
-                Assert.AreEqual(42, value);
+                Assert.Equal(42, value);
             };
 
             Replace.Property((SampleClassWithProperties c) => c.Value).WithSetter(setterMethod);
@@ -148,7 +147,7 @@ namespace Deflector.Tests
             TestModifiedType(assemblyDefinition, typeName, ref callCount);
         }
 
-        [Test]
+        [Fact]
         public void Should_intercept_static_method()
         {
             var assemblyDefinition = RewriteAssemblyOf<SampleClassWithInstanceMethod>();
@@ -159,7 +158,7 @@ namespace Deflector.Tests
                 callCount++;
 
                 // Match the parameters passed to the Console.WriteLine() call
-                Assert.AreEqual("Hello, World!", text);
+                Assert.Equal("Hello, World!", text);
             };
 
             Replace.Method(() => Console.WriteLine("")).With(incrementCallCount);
@@ -170,7 +169,7 @@ namespace Deflector.Tests
             var targetMethod = targetType.GetMethods().First(m => m.IsStatic && m.Name == "DoSomething");
             targetMethod.Invoke(null, new object[0]);
 
-            Assert.AreEqual(1, callCount);
+            Assert.Equal(1, callCount);
         }
     }
 }

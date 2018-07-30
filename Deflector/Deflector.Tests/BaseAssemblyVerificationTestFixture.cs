@@ -4,21 +4,24 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using NUnit.Framework;
+using Xunit;
 
 namespace Deflector.Tests
 {
-    public abstract class BaseAssemblyVerificationTestFixture
+    public abstract class BaseAssemblyVerificationTestFixture : IDisposable
     {
         private static readonly List<string> DisposalList = new List<string>();
 
-        [SetUp]
+        protected BaseAssemblyVerificationTestFixture()
+        {
+            Init();
+        }
+
         public void Init()
         {
             OnInit();
         }
 
-        [TearDown]
         public void Term()
         {
             OnTerm();
@@ -67,7 +70,8 @@ namespace Deflector.Tests
 
             if (!File.Exists(peVerifyLocation))
             {
-                Assert.Inconclusive("Warning: PEVerify.exe could not be found. Skipping test.");
+                Skip.If(!File.Exists(peVerifyLocation), "Warning: PEVerify.exe could not be found. Skipping test.");
+                return;
             }
 
             process.StartInfo.FileName = peVerifyLocation;
@@ -89,7 +93,7 @@ namespace Deflector.Tests
                 return;
 
             Console.WriteLine(processOutput);
-            Assert.Fail("PEVerify output: " + Environment.NewLine + processOutput, result);
+            Assert.True(false,"PEVerify output: " + Environment.NewLine + processOutput);
         }
 
         private static string GetVerifierLocation(IEnumerable<string> pathKeys, string peVerifyLocation)
@@ -107,6 +111,11 @@ namespace Deflector.Tests
                     break;
             }
             return peVerifyLocation;
+        }
+
+        public void Dispose()
+        {
+            Term();
         }
     }
 }
