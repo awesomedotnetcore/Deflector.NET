@@ -14,8 +14,8 @@
     <copyright>Copyright 2016 Philip Laureano</copyright>
     <tags>mocking ilasm rewriting aop</tags>
     <dependencies>
-      <dependency id="LinFu.Finders" version="1.0.1" />
-      <dependency id="Mono.Cecil" version="0.9.6.1" />
+      <dependency id="LinFu.Finders" version="1.0.2" />
+      <dependency id="Mono.Cecil" version="0.10.0" />
     </dependencies>
   </metadata>
 </package>
