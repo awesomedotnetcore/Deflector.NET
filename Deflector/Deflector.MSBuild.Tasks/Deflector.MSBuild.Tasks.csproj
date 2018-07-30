@@ -36,7 +36,7 @@
       <HintPath>..\packages\Deflector.1.0.5431.15540\lib\net40\Deflector.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="LinFu.Finders">
+    <Reference Include="LinFu.Finders, Version=0.0.0.0, Culture=neutral, PublicKeyToken=3addbe3eede3dde9, processorArchitecture=MSIL">
       <HintPath>..\packages\LinFu.Finders.1.0.1\lib\LinFu.Finders.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Build" />

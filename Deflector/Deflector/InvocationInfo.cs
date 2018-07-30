@@ -11,7 +11,6 @@ namespace Deflector
     ///     Represents the information associated with
     ///     a single method call.
     /// </summary>
-    [Serializable]
     public class InvocationInfo : IInvocationInfo
     {
         /// <summary>

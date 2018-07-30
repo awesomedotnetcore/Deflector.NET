@@ -86,8 +86,8 @@ namespace Deflector
             VariableDefinition newLocal = null;
             foreach (var local in method.Body.Variables)
             {
-                // Match the variable name and type
-                if (local.Name != variableName || local.VariableType != localType)
+                // Match the variable type
+                if (local.VariableType != localType)
                     continue;
 
                 newLocal = local;
@@ -99,7 +99,7 @@ namespace Deflector
                 var body = method.Body;
                 var index = body.Variables.Count;
 
-                newLocal = new VariableDefinition(variableName, localType);
+                newLocal = new VariableDefinition(localType);
 
                 body.Variables.Add(newLocal);
             }
@@ -163,8 +163,8 @@ namespace Deflector
         {
             // Check if the parameter type already exists
             var matches = (from GenericParameter p in method.GenericParameters
-                where p.Name == parameterType.Name
-                select p).ToList();
+                           where p.Name == parameterType.Name
+                           select p).ToList();
 
             // Reuse the existing parameter
             if (matches.Count > 0)
@@ -188,7 +188,7 @@ namespace Deflector
         /// <returns>A <see cref="VariableDefinition" /> that represents the local variable itself.</returns>
         public static VariableDefinition AddLocal<T>(this MethodDefinition methodDef)
         {
-            return methodDef.AddLocal(typeof (T));
+            return methodDef.AddLocal(typeof(T));
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace Deflector
         /// <returns>A <see cref="VariableDefinition" /> that represents the local variable itself.</returns>
         public static VariableDefinition AddLocal<T>(this MethodDefinition methodDef, string variableName)
         {
-            return methodDef.AddLocal(variableName, typeof (T));
+            return methodDef.AddLocal(variableName, typeof(T));
         }
     }
 }
