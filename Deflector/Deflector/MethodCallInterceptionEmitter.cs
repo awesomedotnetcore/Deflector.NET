@@ -266,7 +266,7 @@ namespace Deflector
             il.Emit(OpCodes.Brfalse, skipInterception);
 
             SaveMethodCallArguments(il, constructor);
-            var systemType = module.Import(typeof (Type));
+            var systemType = module.ImportReference(typeof (Type));
 
             // Note: There is no 'this' pointer when the constructor isn't called yet
             il.LdNull();
@@ -388,7 +388,7 @@ namespace Deflector
         private void SaveMethodCallInvocationInfo(ILProcessor il, MethodReference targetMethod,
             MethodDefinition callingMethod, ModuleDefinition module)
         {
-            var systemType = module.Import(typeof (Type));
+            var systemType = module.ImportReference(typeof (Type));
 
             // Push the current method
             SaveMethodCallArguments(il, targetMethod);

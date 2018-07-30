@@ -46,7 +46,7 @@ namespace Deflector
         public static MethodReference ImportConstructor<T>(this ModuleDefinition module,
             params Type[] constructorParameters)
         {
-            return module.Import(typeof (T).GetConstructor(constructorParameters));
+            return module.ImportReference(typeof (T).GetConstructor(constructorParameters));
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Deflector
         /// <returns>A <see cref="MethodReference" /> that represents the method being imported.</returns>
         public static MethodReference ImportMethod(this ModuleDefinition module, string methodName, Type declaringType)
         {
-            return module.Import(declaringType.GetMethod(methodName));
+            return module.ImportReference(declaringType.GetMethod(methodName));
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Deflector
         public static MethodReference ImportMethod(this ModuleDefinition module, string methodName, Type declaringType,
             BindingFlags flags)
         {
-            return module.Import(declaringType.GetMethod(methodName, flags));
+            return module.ImportReference(declaringType.GetMethod(methodName, flags));
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Deflector
         /// <returns>A <see cref="MethodReference" /> that represents the method being imported.</returns>
         public static MethodReference ImportMethod<T>(this ModuleDefinition module, string methodName)
         {
-            return module.Import(typeof (T).GetMethod(methodName));
+            return module.ImportReference(typeof (T).GetMethod(methodName));
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace Deflector
         public static MethodReference ImportMethod<T>(this ModuleDefinition module, string methodName,
             params Type[] parameterTypes)
         {
-            return module.Import(typeof (T).GetMethod(methodName, parameterTypes));
+            return module.ImportReference(typeof (T).GetMethod(methodName, parameterTypes));
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace Deflector
         public static MethodReference ImportMethod<T>(this ModuleDefinition module,
             string methodName, BindingFlags flags)
         {
-            return module.Import(typeof (T).GetMethod(methodName, flags));
+            return module.ImportReference(typeof (T).GetMethod(methodName, flags));
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace Deflector
         /// <returns>A <see cref="TypeReference" /> instance that represents the imported type.</returns>
         public static TypeReference ImportType<T>(this ModuleDefinition module)
         {
-            return module.Import(typeof (T));
+            return module.ImportReference(typeof (T));
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace Deflector
         /// <returns>A <see cref="TypeDefinition" /> instance that represents the imported type.</returns>
         public static TypeReference ImportType(this ModuleDefinition module, Type targetType)
         {
-            return module.Import(targetType);
+            return module.ImportReference(targetType);
         }
 
         /// <summary>

@@ -18,7 +18,7 @@ namespace Deflector
         {
             var stackTraceConstructor =
                 typeof (StackTrace).GetConstructor(new[] {typeof (int), typeof (bool)});
-            var stackTraceCtor = module.Import(stackTraceConstructor);
+            var stackTraceCtor = module.ImportReference(stackTraceConstructor);
 
             var addDebugSymbols = OpCodes.Ldc_I4_1;
             IL.Emit(OpCodes.Ldc_I4, framesToSkip);
@@ -71,7 +71,7 @@ namespace Deflector
                 BindingFlags.Public | BindingFlags.Static, null,
                 new[] {typeof (string)}, null);
             IL.Emit(OpCodes.Ldstr, text);
-            IL.Emit(OpCodes.Call, module.Import(writeLineMethod));
+            IL.Emit(OpCodes.Call, module.ImportReference(writeLineMethod));
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Deflector
                 return;
             }
 
-            il.Emit(OpCodes.Unbox_Any, module.Import(returnType));
+            il.Emit(OpCodes.Unbox_Any, module.ImportReference(returnType));
         }
 
         /// <summary>

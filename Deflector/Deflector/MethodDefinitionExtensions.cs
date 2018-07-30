@@ -59,7 +59,7 @@ namespace Deflector
         {
             var declaringType = methodDef.DeclaringType;
             var module = declaringType.Module;
-            var variableType = module.Import(localType);
+            var variableType = module.ImportReference(localType);
             var result = new VariableDefinition(variableType);
 
             methodDef.Body.Variables.Add(result);
@@ -81,7 +81,7 @@ namespace Deflector
         public static VariableDefinition AddLocal(this MethodDefinition method, string variableName, Type variableType)
         {
             var module = method.DeclaringType.Module;
-            var localType = module.Import(variableType);
+            var localType = module.ImportReference(variableType);
 
             VariableDefinition newLocal = null;
             foreach (var local in method.Body.Variables)
@@ -124,7 +124,7 @@ namespace Deflector
                 var hasGenericParameter = type.HasElementType && type.GetElementType().IsGenericParameter;
                 var shouldImportMethodContext = isGeneric || type.IsGenericParameter || hasGenericParameter;
 
-                var parameterType = shouldImportMethodContext ? module.Import(type, method) : module.Import(type);
+                var parameterType = shouldImportMethodContext ? module.ImportReference(type, method) : module.ImportReference(type);
 
                 var param = new ParameterDefinition(parameterType);
                 method.Parameters.Add(param);
@@ -145,9 +145,9 @@ namespace Deflector
             TypeReference actualReturnType;
 
             if ((returnType.ContainsGenericParameters && returnType.IsGenericType) || returnType.IsGenericParameter)
-                actualReturnType = module.Import(returnType, method);
+                actualReturnType = module.ImportReference(returnType, method);
             else
-                actualReturnType = module.Import(returnType);
+                actualReturnType = module.ImportReference(returnType);
 
             method.ReturnType = actualReturnType;
         }
