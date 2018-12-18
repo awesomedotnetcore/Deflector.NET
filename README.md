@@ -38,7 +38,7 @@ public void SomeMassiveLegacyMethodWithoutTests(IRepository repo)
 
 ...and while refactoring it to use an interface is a sensible approach, it forces you to introduce interface dependencies in order to break some static, hardcoded dependencies. In effect, it forces you to swap one dependency for another, just to make the method's behaviour observable from your tests.
 
-The real problem lies within the unknown state of that 1000-line method itself. How do you know that you haven't introduced an additional bug into that method by swapping out those dependencies?The more untested changes you introduce into that method (in order to test it in the first place), the higher the likelihood that you'll add more bugs to the method, which (in turn), you'll have to test again.
+The real problem lies within the unknown state of that 1000-line method itself. How do you know that you haven't introduced an additional bug into that method by swapping out those dependencies? The more untested changes you introduce into that method (in order to test it in the first place), the higher the likelihood that you'll add more bugs to the method, which (in turn), you'll have to test again.
 
 There has to be a way to "observe" a method's behaviour without having to permanently modify it. During testing, as developers, we often need to:
 
@@ -53,7 +53,7 @@ The idea behind Deflector is that you can leave your C# legacy code untouched, w
 It's the best of both worlds, and that's why I wrote Deflector.
 
 ### Changing the method calls instead of modifying entire third-party dependencies
-In practice, it's easier to "fake" a method call inside a method than to have to modify your tests to accommodate a third-party dependency. For example, if you have a hardcoded call to a database or some other data source, you can effectively "trick" a method into thinking that it's calling the same data source if you swap that method call with a mock or a stub that returns a value that simulates the database call. Deflector makes all method calls inside of an assembly easily swappable, which makes removing third-party dependencies (such as databases) trivial to remove.
+In practice, it's easier to "fake" a method call inside a method than to have to modify your tests to accommodate a third-party dependency. For example, if you have a hardcoded call to a database or some other data source, you can effectively "trick" a method into thinking that it's calling the same data source if you swap that method call with a mock or a stub that returns a value that simulates the database call. Deflector makes all method calls inside of an assembly easily swappable, which makes third-party dependencies (such as databases) trivial to remove.
 
 ### "Everything is a mock" versus mock dependency injection
 In a typical mocking scenario, most developers would replace a few hardcoded method calls with a call to a mocking framework of their choice:
@@ -107,6 +107,7 @@ public interface IMethodCall
 }
 ~~~~
 *(_Note_: By default, if you do not specify that an *IMethodCall* instance should replace a method call, the instrumented method will call the original method)*
+
 If you've ever worked with dynamic proxies, then the *IMethodCall* interface might seem familiar to you. That interface (by definition) is an interceptor interface, for which you can provide your own custom implementation. Deflector itself has lots of its own internal implementations for that interface that make it easy for you to pass in your own lambdas or delegates. Those lambdas/delegates, in turn, will be called in place of any method call that you specify.
 
 For example, here is one test case that shows how Deflector can intercept constructor calls:
